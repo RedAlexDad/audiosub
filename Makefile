@@ -1,6 +1,10 @@
 APP_NAME := audiosub
 DOCKER_IMAGE := $(APP_NAME)
 DOCKER_TAG := latest
+MODEL_URL := https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
+MODEL_DIR := models
+MODEL_NAME := vosk-model-small-ru-0.22
+MODEL_PATH := $(MODEL_DIR)/$(MODEL_NAME)
 
 GREEN  := \033[0;32m
 CYAN   := \033[0;36m
@@ -9,7 +13,15 @@ RED    := \033[0;31m
 BOLD   := \033[1m
 NC     := \033[0m
 
-.PHONY: all build test run lint clean docker docker-build docker-run fmt check verify ci-check report help
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
+# Resolve model path to absolute — Vosk needs absolute path
+AUDIOSUB_MODEL := $(CURDIR)/$(MODEL_DIR)/$(MODEL_NAME)
+
+.PHONY: all build test run lint clean docker docker-build docker-run docker-build fmt check verify ci-check report help model-download
 
 all: help
 
@@ -23,25 +35,28 @@ help:
 	@echo "  Download from https://github.com/alphacep/vosk-api/releases"
 	@echo ""
 	@echo "$(CYAN)Targets:$(NC)"
-	@echo "  $(GREEN)all$(NC)           Show this help"
-	@echo "  $(GREEN)build$(NC)         Compile the project"
-	@echo "  $(GREEN)release$(NC)       Compile in release mode"
-	@echo "  $(GREEN)run [ARGS]$(NC)    Run with arguments (e.g. make run ARGS='-- --help')"
-	@echo "  $(GREEN)test$(NC)          Run tests"
-	@echo "  $(GREEN)check$(NC)         cargo check (fast)"
-	@echo "  $(GREEN)lint$(NC)          cargo clippy"
-	@echo "  $(GREEN)fmt$(NC)           Check formatting"
-	@echo "  $(GREEN)verify$(NC)        Run test + check + lint + fmt (CI pipeline)"
-	@echo "  $(GREEN)ci-check$(NC)     Run full CI simulation (scripts/ci-check.sh)"
-	@echo "  $(GREEN)clean$(NC)         Remove build artifacts"
-	@echo "  $(GREEN)docker$(NC)        Build + run via compose"
-	@echo "  $(GREEN)docker-build$(NC)  Build Docker image"
-	@echo "  $(GREEN)docker-run$(NC)    Run via docker compose"
-	@echo "  $(GREEN)report$(NC)        Create report template"
-	@echo "  $(GREEN)help$(NC)          Show this message"
+	@echo "  $(GREEN)all$(NC)             Show this help"
+	@echo "  $(GREEN)build$(NC)           Compile the project"
+	@echo "  $(GREEN)release$(NC)         Compile in release mode"
+	@echo "  $(GREEN)run [ARGS]$(NC)      Run with arguments"
+	@echo "  $(GREEN)model-download$(NC)  Download Vosk model (Russian)"
+	@echo "  $(GREEN)test$(NC)            Run tests"
+	@echo "  $(GREEN)check$(NC)           cargo check (fast)"
+	@echo "  $(GREEN)lint$(NC)            cargo clippy"
+	@echo "  $(GREEN)fmt$(NC)             Check formatting"
+	@echo "  $(GREEN)verify$(NC)          Run test + check + lint + fmt (CI pipeline)"
+	@echo "  $(GREEN)ci-check$(NC)       Run full CI simulation (scripts/ci-check.sh)"
+	@echo "  $(GREEN)clean$(NC)           Remove build artifacts"
+	@echo "  $(GREEN)docker$(NC)          Build + run via compose"
+	@echo "  $(GREEN)docker-build$(NC)    Build Docker image"
+	@echo "  $(GREEN)docker-run$(NC)      Run via docker compose"
+	@echo "  $(GREEN)report$(NC)          Create report template"
+	@echo "  $(GREEN)help$(NC)            Show this message"
 	@echo ""
 	@echo "$(YELLOW)Examples:$(NC)"
-	@echo "  make run ARGS='-- --engine vosk --output subs.srt'"
+	@echo "  make model-download"
+	@echo "  make run"
+	@echo "  make run ARGS='-- --list-devices'"
 	@echo "  make docker"
 
 build:
@@ -53,6 +68,15 @@ release:
 	@echo "$(CYAN)→ Building $(APP_NAME) (release)...$(NC)"
 	cargo build --release
 	@echo "$(GREEN)✓ Release build complete$(NC)"
+
+model-download:
+	@echo "$(CYAN)→ Downloading $(MODEL_NAME)...$(NC)"
+	mkdir -p $(MODEL_DIR)
+	curl -L -o /tmp/$(MODEL_NAME).zip "$(MODEL_URL)" && \
+	unzip -qo /tmp/$(MODEL_NAME).zip -d $(MODEL_DIR) && \
+	rm /tmp/$(MODEL_NAME).zip && \
+	echo "$(GREEN)✓ Model downloaded to $(MODEL_PATH)$(NC)" && \
+	echo "$(YELLOW)  Edit .env to change AUDIOSUB_MODEL path$(NC)"
 
 test:
 	@echo "$(CYAN)→ Running tests...$(NC)"

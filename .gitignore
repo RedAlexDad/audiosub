@@ -6,3 +6,4 @@ Cargo.lock
 *.srt
 *.vtt
 output/
+/models
