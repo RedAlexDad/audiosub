@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -e
+
+REPORT_DIR="reports"
+mkdir -p "$REPORT_DIR"
+
+TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+FILENAME="$(date -u '+%Y-%m-%d_%H-%M-%S').md"
+FILEPATH="$REPORT_DIR/$FILENAME"
+
+CURRENT_BRANCH=$(git branch --show-current)
+CHANGED_FILES=$(git diff --cached --name-only | tr '\n' ' ')
+
+cat > "$FILEPATH" <<EOF
+# Commit Report
+
+**Date:** $TIMESTAMP
+**Branch:** $CURRENT_BRANCH
+**Files changed:** $CHANGED_FILES
+
+## What was added
+
+-
+
+## What was changed
+
+-
+
+## Problems encountered
+
+-
+
+## How they were solved
+
+-
+
+---
+
+EOF
+
+echo "[githook] Report created: $FILEPATH"
+echo "[githook] Please review and edit: $FILEPATH"
