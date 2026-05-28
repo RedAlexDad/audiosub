@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
@@ -13,6 +11,7 @@ mod cli;
 mod config;
 mod logging;
 mod subtitle;
+use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 mod tui;
 
 fn default_model_path() -> PathBuf {
@@ -74,6 +73,19 @@ fn main() -> Result<()> {
     engine.load_model(model_path.to_str().unwrap_or(""))?;
     tracing::info!("ASR engine loaded model from: {}", model_path.display());
 
+    let output_path = args
+        .output
+        .clone()
+        .or_else(|| Some(cfg.subtitle.output.clone()))
+        .unwrap_or_else(|| PathBuf::from("output.srt"));
+    let output_format = args
+        .format
+        .clone()
+        .unwrap_or(cfg.subtitle.format.clone());
+
+    let mut output = SubtitleOutput::create(&output_path, &output_format)?;
+    let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
+
     let chunk_size = (source_rate as usize) / 10; // 100ms chunks of source audio
     let duration = Duration::from_secs(30);
 
@@ -92,8 +104,10 @@ fn main() -> Result<()> {
                 tracing::debug!("Partial: {}", partial);
             }
 
-            let segments = engine.drain_segments()?;
-            for seg in &segments {
+            let stream_pos_ms =
+                (total_samples as u64 * 1000) / engine_rate as u64;
+
+            for seg in engine.drain_segments()? {
                 segment_count += 1;
                 tracing::info!(
                     "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
@@ -104,6 +118,11 @@ fn main() -> Result<()> {
                     seg.end_ms % 60000 / 1000,
                     seg.text
                 );
+                buffer.push(seg.clone());
+            }
+
+            for ready in buffer.flush(stream_pos_ms) {
+                output.append(&ready)?;
             }
         }
     }
@@ -122,14 +141,22 @@ fn main() -> Result<()> {
             seg.end_ms % 60000 / 1000,
             seg.text
         );
+        buffer.push(seg.clone());
     }
 
+    for ready in buffer.drain() {
+        output.append(&ready)?;
+    }
+
+    output.close()?;
+
     tracing::info!(
-        "Session complete: {} samples ({:.1}s) in {:.1}s, {} segments",
+        "Session complete: {} samples ({:.1}s) in {:.1}s, {} segments, output: {:?}",
         total_samples,
         total_samples as f64 / engine_rate as f64,
         start.elapsed().as_secs_f64(),
         segment_count,
+        output_path,
     );
 
     Ok(())

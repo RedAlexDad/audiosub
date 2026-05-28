@@ -8,8 +8,13 @@ pub trait SubtitleWriter: Send {
     fn write_footer(&mut self, writer: &mut dyn Write) -> Result<()>;
 }
 
+pub mod buffer;
+pub mod output;
 pub mod srt;
 pub mod vtt;
+
+pub use output::SubtitleOutput;
+pub use buffer::SubtitleBuffer;
 
 pub fn create_writer(format: &str) -> Box<dyn SubtitleWriter> {
     match format {
