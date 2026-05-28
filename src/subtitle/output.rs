@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
-use super::{create_writer, SubtitleWriter};
+use super::{SubtitleWriter, create_writer};
 use crate::asr::Segment;
 
 pub struct SubtitleOutput {
@@ -14,8 +14,7 @@ pub struct SubtitleOutput {
 
 impl SubtitleOutput {
     pub fn create(path: &Path, format: &str) -> Result<Self> {
-        let file = File::create(path)
-            .with_context(|| format!("Failed to create subtitle file: {:?}", path))?;
+        let file = File::create(path).with_context(|| format!("Failed to create subtitle file: {:?}", path))?;
         let mut file = BufWriter::new(file);
 
         let mut writer = create_writer(format);
@@ -27,8 +26,7 @@ impl SubtitleOutput {
 
     pub fn append(&mut self, segment: &Segment) -> Result<()> {
         self.index += 1;
-        self.writer
-            .write_segment(&mut self.file, segment, self.index)?;
+        self.writer.write_segment(&mut self.file, segment, self.index)?;
         self.file.flush()?;
         Ok(())
     }

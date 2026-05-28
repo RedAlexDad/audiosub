@@ -13,8 +13,8 @@ pub mod output;
 pub mod srt;
 pub mod vtt;
 
-pub use output::SubtitleOutput;
 pub use buffer::SubtitleBuffer;
+pub use output::SubtitleOutput;
 
 pub fn create_writer(format: &str) -> Box<dyn SubtitleWriter> {
     match format {

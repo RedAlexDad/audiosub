@@ -46,12 +46,10 @@ impl AudioResampler {
             let chunk = &self.buffer[consumed..consumed + self.input_needed];
 
             let input_adapter =
-                InterleavedSlice::new(chunk, 1, self.input_needed)
-                    .context("Failed to create input adapter")?;
+                InterleavedSlice::new(chunk, 1, self.input_needed).context("Failed to create input adapter")?;
             let mut out_scratch = vec![0.0f32; self.output_needed];
-            let mut output_adapter =
-                InterleavedSlice::new_mut(&mut out_scratch, 1, self.output_needed)
-                    .context("Failed to create output adapter")?;
+            let mut output_adapter = InterleavedSlice::new_mut(&mut out_scratch, 1, self.output_needed)
+                .context("Failed to create output adapter")?;
 
             let (_, nbr_out) = self
                 .resampler
@@ -71,15 +69,13 @@ impl AudioResampler {
             return Ok(Vec::new());
         }
         let pad = self.input_needed - self.buffer.len();
-        self.buffer.extend(std::iter::repeat(0.0).take(pad));
+        self.buffer.extend(std::iter::repeat_n(0.0, pad));
 
         let input_adapter =
-            InterleavedSlice::new(&self.buffer, 1, self.input_needed)
-                .context("Failed to create input adapter")?;
+            InterleavedSlice::new(&self.buffer, 1, self.input_needed).context("Failed to create input adapter")?;
         let mut out_scratch = vec![0.0f32; self.output_needed];
-        let mut output_adapter =
-            InterleavedSlice::new_mut(&mut out_scratch, 1, self.output_needed)
-                .context("Failed to create output adapter")?;
+        let mut output_adapter = InterleavedSlice::new_mut(&mut out_scratch, 1, self.output_needed)
+            .context("Failed to create output adapter")?;
 
         self.resampler
             .process_into_buffer(&input_adapter, &mut output_adapter, None)

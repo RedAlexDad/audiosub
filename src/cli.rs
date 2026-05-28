@@ -31,7 +31,12 @@ pub struct Cli {
     #[arg(long, help = "List available PulseAudio monitor sources and exit")]
     pub list_devices: bool,
 
-    #[arg(long, short = 'd', env = "AUDIOSUB_DURATION", help = "Recording duration in seconds (default: unlimited)")]
+    #[arg(
+        long,
+        short = 'd',
+        env = "AUDIOSUB_DURATION",
+        help = "Recording duration in seconds (default: unlimited)"
+    )]
     pub duration: Option<u64>,
 
     #[arg(long, short = 'v', env = "AUDIOSUB_VERBOSE", action = clap::ArgAction::Count, help = "Verbosity level")]

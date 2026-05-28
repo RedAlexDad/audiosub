@@ -1,12 +1,12 @@
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode};
+use ratatui::Frame;
+use ratatui::Terminal;
 use ratatui::layout::{Constraint, Layout, Rect};
+use ratatui::prelude::CrosstermBackend;
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
-use ratatui::prelude::CrosstermBackend;
-use ratatui::Frame;
-use ratatui::Terminal;
 use std::io;
 use std::time::Duration;
 
@@ -41,8 +41,7 @@ impl TuiApp {
 
     pub fn update_audio(&mut self, samples: usize) {
         self.total_samples += samples;
-        self.elapsed =
-            Duration::from_secs_f64(self.total_samples as f64 / self.engine_rate as f64);
+        self.elapsed = Duration::from_secs_f64(self.total_samples as f64 / self.engine_rate as f64);
     }
 
     pub fn set_partial(&mut self, text: &str) {
@@ -67,12 +66,8 @@ impl TuiApp {
 
     pub fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
-        let [top, middle, bottom] = Layout::vertical([
-            Constraint::Length(3),
-            Constraint::Fill(1),
-            Constraint::Length(10),
-        ])
-        .areas(area);
+        let [top, middle, bottom] =
+            Layout::vertical([Constraint::Length(3), Constraint::Fill(1), Constraint::Length(10)]).areas(area);
 
         self.render_top(frame, top);
         self.render_middle(frame, middle);
@@ -86,11 +81,7 @@ impl TuiApp {
             Span::styled("■ STOPPED", Style::new().fg(Color::Red))
         };
 
-        let elapsed = format!(
-            "{:02}:{:02}",
-            self.elapsed.as_secs() / 60,
-            self.elapsed.as_secs() % 60
-        );
+        let elapsed = format!("{:02}:{:02}", self.elapsed.as_secs() / 60, self.elapsed.as_secs() % 60);
 
         let title = Line::from(vec![
             Span::styled(" audiosub ", Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
@@ -166,15 +157,15 @@ impl TuiApp {
     }
 
     pub fn handle_input(&mut self) -> Result<bool> {
-        if event::poll(Duration::from_millis(0))? {
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => {
-                        self.stop();
-                        return Ok(false);
-                    }
-                    _ => {}
+        if event::poll(Duration::from_millis(0))?
+            && let Event::Key(key) = event::read()?
+        {
+            match key.code {
+                KeyCode::Char('q') | KeyCode::Esc => {
+                    self.stop();
+                    return Ok(false);
                 }
+                _ => {}
             }
         }
         Ok(true)
@@ -188,7 +179,7 @@ impl TuiApp {
         buffer: &mut crate::subtitle::SubtitleBuffer,
         chunk_size: usize,
     ) -> Result<()> {
-        use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+        use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode};
 
         enable_raw_mode()?;
         let mut stdout = io::stdout();
@@ -228,8 +219,7 @@ impl TuiApp {
                 let partial = engine.partial_text()?;
                 self.set_partial(&partial);
 
-                let stream_pos_ms =
-                    (self.total_samples as u64 * 1000) / self.engine_rate as u64;
+                let stream_pos_ms = (self.total_samples as u64 * 1000) / self.engine_rate as u64;
 
                 let segments = engine.drain_segments()?;
                 if !segments.is_empty() {

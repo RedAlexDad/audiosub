@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
@@ -57,10 +59,7 @@ fn run_session(
         .clone()
         .or_else(|| Some(cfg.subtitle.output.clone()))
         .unwrap_or_else(|| PathBuf::from("output.srt"));
-    let output_format = args
-        .format
-        .clone()
-        .unwrap_or(cfg.subtitle.format.clone());
+    let output_format = args.format.clone().unwrap_or(cfg.subtitle.format.clone());
 
     let mut output = SubtitleOutput::create(&output_path, &output_format)?;
     let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
@@ -190,10 +189,7 @@ fn main() -> Result<()> {
             .clone()
             .or_else(|| Some(cfg.subtitle.output.clone()))
             .unwrap_or_else(|| PathBuf::from("output.srt"));
-        let output_format = args
-            .format
-            .clone()
-            .unwrap_or(cfg.subtitle.format.clone());
+        let output_format = args.format.clone().unwrap_or(cfg.subtitle.format.clone());
         let mut output = SubtitleOutput::create(&output_path, &output_format)?;
         let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
 

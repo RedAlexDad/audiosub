@@ -24,11 +24,11 @@ impl SubtitleBuffer {
 
         for seg in self.pool.drain(..) {
             if seg.end_ms <= cutoff {
-                if let Some(last) = ready.last_mut() {
-                    if overlap_ms(last, &seg) {
-                        merge_into(last, &seg);
-                        continue;
-                    }
+                if let Some(last) = ready.last_mut()
+                    && overlap_ms(last, &seg)
+                {
+                    merge_into(last, &seg);
+                    continue;
                 }
                 ready.push(seg);
             } else {

@@ -55,8 +55,8 @@ impl AudioCapture for PulseCapture {
         )
         .context(format!("Failed to connect to PulseAudio source '{}'", self.device))?;
 
-        let resampler = AudioResampler::new(self.source_rate, self.target_rate)
-            .context("Failed to create audio resampler")?;
+        let resampler =
+            AudioResampler::new(self.source_rate, self.target_rate).context("Failed to create audio resampler")?;
 
         tracing::info!(
             "PulseAudio capture started: device={}, source_rate={}, target_rate={}",
