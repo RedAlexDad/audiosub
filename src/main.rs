@@ -59,20 +59,22 @@ fn main() -> Result<()> {
         })
         .unwrap_or_else(|| "default".into());
 
-    let sample_rate = cfg.audio.sample_rate;
+    let source_rate = cfg.audio.sample_rate;
 
-    let mut capture = audio::PulseCapture::new(&device, sample_rate);
+    let mut capture = audio::PulseCapture::new(&device, source_rate);
     capture.start()?;
 
-    tracing::info!("Capturing from: {}", device);
+    let engine_rate = capture.sample_rate();
+
+    tracing::info!("Capturing from: {} ({} → {} Hz)", device, source_rate, engine_rate);
 
     let model_path = args.model.clone().unwrap_or_else(default_model_path);
 
-    let mut engine = create_engine(sample_rate as f32);
+    let mut engine = create_engine(engine_rate as f32);
     engine.load_model(model_path.to_str().unwrap_or(""))?;
     tracing::info!("ASR engine loaded model from: {}", model_path.display());
 
-    let chunk_size = (sample_rate as usize) / 10; // 100ms chunks
+    let chunk_size = (source_rate as usize) / 10; // 100ms chunks of source audio
     let duration = Duration::from_secs(30);
 
     let start = std::time::Instant::now();
@@ -125,7 +127,7 @@ fn main() -> Result<()> {
     tracing::info!(
         "Session complete: {} samples ({:.1}s) in {:.1}s, {} segments",
         total_samples,
-        total_samples as f64 / sample_rate as f64,
+        total_samples as f64 / engine_rate as f64,
         start.elapsed().as_secs_f64(),
         segment_count,
     );

@@ -3,9 +3,11 @@ use std::time::Instant;
 
 mod monitor;
 mod pulse;
+mod resampler;
 
 pub use monitor::find_default_monitor;
 pub use pulse::PulseCapture;
+pub use resampler::AudioResampler;
 
 pub struct AudioChunk {
     pub data: Vec<f32>,
