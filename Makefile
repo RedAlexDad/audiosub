@@ -2,45 +2,94 @@ APP_NAME := audiosub
 DOCKER_IMAGE := $(APP_NAME)
 DOCKER_TAG := latest
 
-.PHONY: all build test run lint clean docker docker-build docker-run fmt check report
+GREEN  := \033[0;32m
+CYAN   := \033[0;36m
+YELLOW := \033[1;33m
+RED    := \033[0;31m
+BOLD   := \033[1m
+NC     := \033[0m
 
-all: build
+.PHONY: all build test run lint clean docker docker-build docker-run fmt check report help
+
+all: help
+
+help:
+	@echo "$(BOLD)$(APP_NAME)$(NC) - real-time automatic subtitles"
+	@echo ""
+	@echo "$(CYAN)Usage:$(NC)"
+	@echo "  make $(GREEN)<target>$(NC)"
+	@echo ""
+	@echo "$(CYAN)Targets:$(NC)"
+	@echo "  $(GREEN)all$(NC)           Show this help"
+	@echo "  $(GREEN)build$(NC)         Compile the project"
+	@echo "  $(GREEN)release$(NC)       Compile in release mode"
+	@echo "  $(GREEN)run [ARGS]$(NC)    Run with arguments (e.g. make run ARGS='-- --help')"
+	@echo "  $(GREEN)test$(NC)          Run tests"
+	@echo "  $(GREEN)check$(NC)         cargo check (fast)"
+	@echo "  $(GREEN)lint$(NC)          cargo clippy"
+	@echo "  $(GREEN)fmt$(NC)           Check formatting"
+	@echo "  $(GREEN)clean$(NC)         Remove build artifacts"
+	@echo "  $(GREEN)docker$(NC)        Build + run via compose"
+	@echo "  $(GREEN)docker-build$(NC)  Build Docker image"
+	@echo "  $(GREEN)docker-run$(NC)    Run via docker compose"
+	@echo "  $(GREEN)report$(NC)        Create report template"
+	@echo "  $(GREEN)help$(NC)          Show this message"
+	@echo ""
+	@echo "$(YELLOW)Examples:$(NC)"
+	@echo "  make run ARGS='-- --engine vosk --output subs.srt'"
+	@echo "  make docker"
 
 build:
+	@echo "$(CYAN)→ Building $(APP_NAME)...$(NC)"
 	cargo build
+	@echo "$(GREEN)✓ Build complete$(NC)"
 
 release:
+	@echo "$(CYAN)→ Building $(APP_NAME) (release)...$(NC)"
 	cargo build --release
+	@echo "$(GREEN)✓ Release build complete$(NC)"
 
 test:
+	@echo "$(CYAN)→ Running tests...$(NC)"
 	cargo test
+	@echo "$(GREEN)✓ Tests passed$(NC)"
 
 run:
+	@echo "$(CYAN)→ Starting $(APP_NAME)...$(NC)"
 	cargo run -- $(ARGS)
 
-lint:
-	cargo clippy -- -D warnings
-
-fmt:
-	cargo fmt --check
-
 check:
+	@echo "$(CYAN)→ Checking...$(NC)"
 	cargo check
 
+lint:
+	@echo "$(CYAN)→ Linting...$(NC)"
+	cargo clippy -- -D warnings
+	@echo "$(GREEN)✓ Lint passed$(NC)"
+
+fmt:
+	@echo "$(CYAN)→ Checking formatting...$(NC)"
+	cargo fmt --check
+	@echo "$(GREEN)✓ Formatting OK$(NC)"
+
 clean:
+	@echo "$(YELLOW)← Cleaning...$(NC)"
 	cargo clean
+	@echo "$(GREEN)✓ Cleaned$(NC)"
 
 docker-build:
+	@echo "$(CYAN)→ Building Docker image...$(NC)"
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	@echo "$(GREEN)✓ Docker image built$(NC)"
 
 docker-run:
+	@echo "$(CYAN)→ Starting Docker Compose...$(NC)"
 	docker compose up --build
 
-docker:
-	docker-build docker-run
+docker: docker-build docker-run
 
 report:
-	@echo "Creating report..."
+	@echo "$(CYAN)→ Creating report...$(NC)"
 	@mkdir -p reports
 	@echo "# Report $(shell date -u '+%Y-%m-%d %H:%M:%S UTC')" > reports/latest.md
 	@echo "" >> reports/latest.md
@@ -55,4 +104,4 @@ report:
 	@echo "" >> reports/latest.md
 	@echo "---" >> reports/latest.md
 	@echo "Report generated automatically." >> reports/latest.md
-	@echo "Created reports/latest.md — edit it before committing."
+	@echo "$(GREEN)✓ Created reports/latest.md$(NC) — edit it before committing."
