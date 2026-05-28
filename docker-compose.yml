@@ -1,29 +1,17 @@
 services:
   audiosub:
-    build: .
-    image: audiosub:latest
-    container_name: audiosub
-    network_mode: host
-    volumes:
-      - audiosub-cache:/home/audiosub/.cache
-      - ./output:/app/output
-    environment:
-      - RUST_LOG=audiosub=info
-    command: ["--help"]
-
-  dev:
     build:
       context: .
-      target: builder
-    image: audiosub-dev:latest
-    container_name: audiosub-dev
-    network_mode: host
+      network: host
+    image: audiosub:latest
+    environment:
+      - PULSE_SERVER=unix:/run/user/${USER_ID:-1000}/pulse/native
+      - AUDIOSUB_MODEL_PATH=/cache/audiosub/models/vosk-model-small-ru-0.22
     volumes:
-      - .:/app
-      - cargo-cache:/usr/local/cargo/registry
-    working_dir: /app
-    command: ["cargo", "watch", "-x", "run"]
-
-volumes:
-  audiosub-cache:
-  cargo-cache:
+      - /run/user/${USER_ID:-1000}/pulse:/run/user/${USER_ID:-1000}/pulse
+      - ./output:/output
+    user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
+    command: [
+      "--device", "alsa_output.pci-0000_6e_00.6.analog-stereo.monitor",
+      "--output", "/output/subtitles.srt"
+    ]

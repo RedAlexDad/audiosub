@@ -96,14 +96,14 @@ clean:
 
 docker-build:
 	@echo "$(CYAN)→ Building Docker image...$(NC)"
-	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	DOCKER_BUILDKIT=0 docker build --network host -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 	@echo "$(GREEN)✓ Docker image built$(NC)"
 
 docker-run:
 	@echo "$(CYAN)→ Starting Docker Compose...$(NC)"
-	docker compose up --build
+	USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) docker compose up
 
-docker: docker-build docker-run
+docker: docker-run
 
 report:
 	@echo "$(CYAN)→ Creating report...$(NC)"
