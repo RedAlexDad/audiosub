@@ -9,7 +9,7 @@ RED    := \033[0;31m
 BOLD   := \033[1m
 NC     := \033[0m
 
-.PHONY: all build test run lint clean docker docker-build docker-run fmt check verify report help
+.PHONY: all build test run lint clean docker docker-build docker-run fmt check verify ci-check report help
 
 all: help
 
@@ -32,6 +32,7 @@ help:
 	@echo "  $(GREEN)lint$(NC)          cargo clippy"
 	@echo "  $(GREEN)fmt$(NC)           Check formatting"
 	@echo "  $(GREEN)verify$(NC)        Run test + check + lint + fmt (CI pipeline)"
+	@echo "  $(GREEN)ci-check$(NC)     Run full CI simulation (scripts/ci-check.sh)"
 	@echo "  $(GREEN)clean$(NC)         Remove build artifacts"
 	@echo "  $(GREEN)docker$(NC)        Build + run via compose"
 	@echo "  $(GREEN)docker-build$(NC)  Build Docker image"
@@ -83,6 +84,10 @@ verify:
 	$(MAKE) lint && \
 	$(MAKE) fmt
 	@echo "$(GREEN)✓ All checks passed$(NC)"
+
+ci-check:
+	@echo "$(CYAN)→ Running CI simulation...$(NC)"
+	@scripts/ci-check.sh
 
 clean:
 	@echo "$(YELLOW)← Cleaning...$(NC)"
