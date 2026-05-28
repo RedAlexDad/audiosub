@@ -4,30 +4,30 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "audiosub", version, about = "Real-time automatic subtitles for Linux")]
 pub struct Cli {
-    #[arg(long, short, help = "Path to config file")]
+    #[arg(long, short, env = "AUDIOSUB_CONFIG", help = "Path to config file")]
     pub config: Option<PathBuf>,
 
-    #[arg(long, default_value = "vosk", help = "ASR engine: vosk | whisper")]
+    #[arg(long, env = "AUDIOSUB_ENGINE", help = "ASR engine: vosk | whisper")]
     pub engine: Option<String>,
 
-    #[arg(long, short, help = "Model path")]
+    #[arg(long, short, env = "AUDIOSUB_MODEL", help = "Model path")]
     pub model: Option<PathBuf>,
 
-    #[arg(long, short, default_value = "output.srt", help = "Output subtitle file")]
+    #[arg(long, short, env = "AUDIOSUB_OUTPUT", help = "Output subtitle file")]
     pub output: Option<PathBuf>,
 
-    #[arg(long, default_value = "en-US", help = "Language code")]
+    #[arg(long, env = "AUDIOSUB_LANG", help = "Language code")]
     pub lang: Option<String>,
 
-    #[arg(long, help = "Audio device (PulseAudio monitor source)")]
+    #[arg(long, env = "AUDIOSUB_DEVICE", help = "Audio device (PulseAudio monitor source)")]
     pub device: Option<String>,
 
-    #[arg(long, help = "Subtitle format: srt | vtt")]
+    #[arg(long, env = "AUDIOSUB_FORMAT", help = "Subtitle format: srt | vtt")]
     pub format: Option<String>,
 
     #[arg(long, short = 'T', help = "Enable TUI mode (ratatui)")]
     pub tui: bool,
 
-    #[arg(long, short = 'v', action = clap::ArgAction::Count, help = "Verbosity level")]
+    #[arg(long, short = 'v', env = "AUDIOSUB_VERBOSE", action = clap::ArgAction::Count, help = "Verbosity level")]
     pub verbose: u8,
 }
