@@ -12,6 +12,7 @@ mod config;
 mod logging;
 mod subtitle;
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
+#[cfg(feature = "tui")]
 mod tui;
 
 fn default_model_path() -> PathBuf {
@@ -31,36 +32,14 @@ fn create_engine(_sample_rate: f32) -> Box<dyn AsrEngine> {
     panic!("No ASR engine enabled. Enable 'vosk' or 'whisper' feature.");
 }
 
-fn main() -> Result<()> {
-    let args = cli::Cli::parse();
-
-    logging::init(args.verbose)?;
-
-    let cfg = config::Config::load(args.config.as_ref())?;
-
-    tracing::info!("audiosub v{} starting", env!("CARGO_PKG_VERSION"));
-    tracing::debug!("Config: {:?}", cfg);
-
-    if args.tui {
-        let mut app = tui::TuiApp::new();
-        return app.run();
-    }
-
-    let device = args
-        .device
-        .clone()
-        .or_else(|| {
-            if cfg.audio.device == "default" {
-                audio::find_default_monitor().ok()
-            } else {
-                Some(cfg.audio.device.clone())
-            }
-        })
-        .unwrap_or_else(|| "default".into());
-
-    let source_rate = cfg.audio.sample_rate;
-
-    let mut capture = audio::PulseCapture::new(&device, source_rate);
+fn run_session(
+    args: &cli::Cli,
+    cfg: &config::Config,
+    device: &str,
+    source_rate: u32,
+    duration: Duration,
+) -> Result<()> {
+    let mut capture = audio::PulseCapture::new(device, source_rate);
     capture.start()?;
 
     let engine_rate = capture.sample_rate();
@@ -86,9 +65,7 @@ fn main() -> Result<()> {
     let mut output = SubtitleOutput::create(&output_path, &output_format)?;
     let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
 
-    let chunk_size = (source_rate as usize) / 10; // 100ms chunks of source audio
-    let duration = Duration::from_secs(30);
-
+    let chunk_size = (source_rate as usize) / 10;
     let start = std::time::Instant::now();
     let mut total_samples = 0usize;
     let mut segment_count = 0usize;
@@ -104,8 +81,7 @@ fn main() -> Result<()> {
                 tracing::debug!("Partial: {}", partial);
             }
 
-            let stream_pos_ms =
-                (total_samples as u64 * 1000) / engine_rate as u64;
+            let stream_pos_ms = (total_samples as u64 * 1000) / engine_rate as u64;
 
             for seg in engine.drain_segments()? {
                 segment_count += 1;
@@ -160,4 +136,74 @@ fn main() -> Result<()> {
     );
 
     Ok(())
+}
+
+fn main() -> Result<()> {
+    let args = cli::Cli::parse();
+
+    logging::init(args.verbose)?;
+
+    let cfg = config::Config::load(args.config.as_ref())?;
+
+    tracing::info!("audiosub v{} starting", env!("CARGO_PKG_VERSION"));
+    tracing::debug!("Config: {:?}", cfg);
+
+    if args.list_devices {
+        let sources = audio::list_sources()?;
+        println!("Available PulseAudio monitor sources:");
+        for s in &sources {
+            println!("  {}", s);
+        }
+        return Ok(());
+    }
+
+    let device = args
+        .device
+        .clone()
+        .or_else(|| {
+            if cfg.audio.device == "default" {
+                audio::find_default_monitor().ok()
+            } else {
+                Some(cfg.audio.device.clone())
+            }
+        })
+        .unwrap_or_else(|| "default".into());
+
+    let duration = Duration::from_secs(args.duration.unwrap_or(u64::MAX));
+
+    if !args.tui {
+        return run_session(&args, &cfg, &device, cfg.audio.sample_rate, duration);
+    }
+
+    #[cfg(feature = "tui")]
+    {
+        let mut capture = audio::PulseCapture::new(&device, cfg.audio.sample_rate);
+        capture.start()?;
+        let engine_rate = capture.sample_rate();
+
+        let model_path = args.model.clone().unwrap_or_else(default_model_path);
+        let mut engine = create_engine(engine_rate as f32);
+        engine.load_model(model_path.to_str().unwrap_or(""))?;
+
+        let output_path = args
+            .output
+            .clone()
+            .or_else(|| Some(cfg.subtitle.output.clone()))
+            .unwrap_or_else(|| PathBuf::from("output.srt"));
+        let output_format = args
+            .format
+            .clone()
+            .unwrap_or(cfg.subtitle.format.clone());
+        let mut output = SubtitleOutput::create(&output_path, &output_format)?;
+        let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
+
+        let chunk_size = (cfg.audio.sample_rate as usize) / 10;
+        let mut app = tui::TuiApp::new(engine_rate);
+        app.run_with_capture(&mut capture, engine.as_mut(), &mut output, &mut buffer, chunk_size)
+    }
+
+    #[cfg(not(feature = "tui"))]
+    {
+        anyhow::bail!("TUI mode requires the 'tui' feature: cargo build --features tui")
+    }
 }

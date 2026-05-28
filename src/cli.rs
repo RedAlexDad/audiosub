@@ -25,8 +25,14 @@ pub struct Cli {
     #[arg(long, env = "AUDIOSUB_FORMAT", help = "Subtitle format: srt | vtt")]
     pub format: Option<String>,
 
-    #[arg(long, short = 'T', help = "Enable TUI mode (ratatui)")]
+    #[arg(long, short = 'T', help = "Enable TUI mode")]
     pub tui: bool,
+
+    #[arg(long, help = "List available PulseAudio monitor sources and exit")]
+    pub list_devices: bool,
+
+    #[arg(long, short = 'd', env = "AUDIOSUB_DURATION", help = "Recording duration in seconds (default: unlimited)")]
+    pub duration: Option<u64>,
 
     #[arg(long, short = 'v', env = "AUDIOSUB_VERBOSE", action = clap::ArgAction::Count, help = "Verbosity level")]
     pub verbose: u8,

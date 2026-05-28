@@ -5,7 +5,7 @@ mod monitor;
 mod pulse;
 mod resampler;
 
-pub use monitor::find_default_monitor;
+pub use monitor::{find_default_monitor, list_sources};
 pub use pulse::PulseCapture;
 pub use resampler::AudioResampler;
 
