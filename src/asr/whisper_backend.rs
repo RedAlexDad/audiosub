@@ -1,5 +1,7 @@
 use anyhow::Result;
 
+use crate::asr::{AsrEngine, Segment};
+
 pub struct WhisperEngine;
 
 impl Default for WhisperEngine {
@@ -14,12 +16,24 @@ impl WhisperEngine {
     }
 }
 
-impl super::AsrEngine for WhisperEngine {
+impl AsrEngine for WhisperEngine {
     fn load_model(&mut self, _path: &str) -> Result<()> {
         Ok(())
     }
 
-    fn transcribe(&mut self, _audio: &[f32]) -> Result<Vec<super::Segment>> {
+    fn feed_audio(&mut self, _audio: &[f32]) -> Result<()> {
+        Ok(())
+    }
+
+    fn partial_text(&mut self) -> Result<String> {
+        Ok(String::new())
+    }
+
+    fn drain_segments(&mut self) -> Result<Vec<Segment>> {
+        Ok(vec![])
+    }
+
+    fn finalize(&mut self) -> Result<Vec<Segment>> {
         Ok(vec![])
     }
 

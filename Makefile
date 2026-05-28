@@ -19,6 +19,9 @@ help:
 	@echo "$(CYAN)Usage:$(NC)"
 	@echo "  make $(GREEN)<target>$(NC)"
 	@echo ""
+	@echo "$(YELLOW)Note:$(NC) Requires libvosk.so in /home/redalexdad/.local/lib/"
+	@echo "  Download from https://github.com/alphacep/vosk-api/releases"
+	@echo ""
 	@echo "$(CYAN)Targets:$(NC)"
 	@echo "  $(GREEN)all$(NC)           Show this help"
 	@echo "  $(GREEN)build$(NC)         Compile the project"
@@ -57,7 +60,7 @@ test:
 
 run:
 	@echo "$(CYAN)→ Starting $(APP_NAME)...$(NC)"
-	cargo run -- $(ARGS)
+	LD_LIBRARY_PATH=/home/redalexdad/.local/lib cargo run -- $(ARGS)
 
 check:
 	@echo "$(CYAN)→ Checking...$(NC)"

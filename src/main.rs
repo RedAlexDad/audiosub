@@ -2,16 +2,35 @@
 
 use anyhow::Result;
 use clap::Parser;
+use std::path::PathBuf;
 use std::time::Duration;
 
 mod audio;
 use crate::audio::AudioCapture;
 mod asr;
+use crate::asr::AsrEngine;
 mod cli;
 mod config;
 mod logging;
 mod subtitle;
 mod tui;
+
+fn default_model_path() -> PathBuf {
+    let cache_dir = directories::BaseDirs::new()
+        .map(|d| d.cache_dir().join("audiosub").join("models"))
+        .unwrap_or_else(|| PathBuf::from("~/.cache/audiosub/models"));
+    cache_dir.join("vosk-model-small-en-us-0.15")
+}
+
+#[cfg(feature = "vosk")]
+fn create_engine(sample_rate: f32) -> Box<dyn AsrEngine> {
+    Box::new(asr::vosk_backend::VoskEngine::new(sample_rate))
+}
+
+#[cfg(not(any(feature = "vosk", feature = "whisper")))]
+fn create_engine(_sample_rate: f32) -> Box<dyn AsrEngine> {
+    panic!("No ASR engine enabled. Enable 'vosk' or 'whisper' feature.");
+}
 
 fn main() -> Result<()> {
     let args = cli::Cli::parse();
@@ -40,35 +59,75 @@ fn main() -> Result<()> {
         })
         .unwrap_or_else(|| "default".into());
 
-    let mut capture = audio::PulseCapture::new(&device, cfg.audio.sample_rate);
+    let sample_rate = cfg.audio.sample_rate;
+
+    let mut capture = audio::PulseCapture::new(&device, sample_rate);
     capture.start()?;
 
     tracing::info!("Capturing from: {}", device);
 
-    let chunk_size = (cfg.audio.sample_rate as usize) / 10; // 100ms chunks
-    let duration = Duration::from_secs(5);
+    let model_path = args.model.clone().unwrap_or_else(default_model_path);
+
+    let mut engine = create_engine(sample_rate as f32);
+    engine.load_model(model_path.to_str().unwrap_or(""))?;
+    tracing::info!("ASR engine loaded model from: {}", model_path.display());
+
+    let chunk_size = (sample_rate as usize) / 10; // 100ms chunks
+    let duration = Duration::from_secs(30);
 
     let start = std::time::Instant::now();
     let mut total_samples = 0usize;
+    let mut segment_count = 0usize;
 
     while start.elapsed() < duration {
         if let Some(chunk) = capture.read(chunk_size)? {
             total_samples += chunk.data.len();
-            tracing::info!(
-                "chunk: {} samples, {:.1}s of audio, peak: {:.2}",
-                chunk.data.len(),
-                chunk.data.len() as f64 / chunk.sample_rate as f64,
-                chunk.data.iter().map(|&s| s.abs()).fold(0.0f32, f32::max)
-            );
+
+            engine.feed_audio(&chunk.data)?;
+
+            let partial = engine.partial_text()?;
+            if !partial.is_empty() {
+                tracing::debug!("Partial: {}", partial);
+            }
+
+            let segments = engine.drain_segments()?;
+            for seg in &segments {
+                segment_count += 1;
+                tracing::info!(
+                    "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
+                    segment_count,
+                    seg.start_ms / 60000,
+                    seg.start_ms % 60000 / 1000,
+                    seg.end_ms / 60000,
+                    seg.end_ms % 60000 / 1000,
+                    seg.text
+                );
+            }
         }
     }
 
     capture.stop()?;
+
+    let final_segments = engine.finalize()?;
+    for seg in &final_segments {
+        segment_count += 1;
+        tracing::info!(
+            "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
+            segment_count,
+            seg.start_ms / 60000,
+            seg.start_ms % 60000 / 1000,
+            seg.end_ms / 60000,
+            seg.end_ms % 60000 / 1000,
+            seg.text
+        );
+    }
+
     tracing::info!(
-        "Captured {} samples ({:.1}s) in {:.1}s",
+        "Session complete: {} samples ({:.1}s) in {:.1}s, {} segments",
         total_samples,
-        total_samples as f64 / cfg.audio.sample_rate as f64,
-        start.elapsed().as_secs_f64()
+        total_samples as f64 / sample_rate as f64,
+        start.elapsed().as_secs_f64(),
+        segment_count,
     );
 
     Ok(())
