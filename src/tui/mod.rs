@@ -22,6 +22,9 @@ pub struct TuiApp {
     max_duration_ms: u64,
     elapsed: Duration,
     running: bool,
+    scroll_offset: usize,
+    auto_scroll: bool,
+    paused: bool,
 }
 
 impl TuiApp {
@@ -35,6 +38,9 @@ impl TuiApp {
             max_duration_ms,
             elapsed: Duration::default(),
             running: true,
+            scroll_offset: 0,
+            auto_scroll: true,
+            paused: false,
         }
     }
 
@@ -43,25 +49,34 @@ impl TuiApp {
     }
 
     pub fn update_audio(&mut self, samples: usize) {
+        if self.paused {
+            return;
+        }
         self.total_samples += samples;
         self.elapsed = Duration::from_secs_f64(self.total_samples as f64 / self.engine_rate as f64);
     }
 
     pub fn set_partial(&mut self, text: &str) {
+        if self.paused {
+            return;
+        }
         if !text.is_empty() {
             self.partial = text.to_string();
         }
     }
 
     pub fn add_segments(&mut self, segments: Vec<Segment>) {
+        if self.paused {
+            return;
+        }
         for seg in segments {
             for split in subtitle::split_segment(seg, self.max_duration_ms) {
                 self.segment_count += 1;
                 self.segments.push(split);
             }
         }
-        if self.segments.len() > 100 {
-            self.segments.drain(..self.segments.len() - 100);
+        if self.auto_scroll {
+            self.scroll_offset = 0;
         }
     }
 
@@ -72,7 +87,7 @@ impl TuiApp {
     pub fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
         let [top, middle, bottom] =
-            Layout::vertical([Constraint::Length(3), Constraint::Fill(1), Constraint::Length(10)]).areas(area);
+            Layout::vertical([Constraint::Length(3), Constraint::Fill(1), Constraint::Length(18)]).areas(area);
 
         self.render_top(frame, top);
         self.render_middle(frame, middle);
@@ -80,7 +95,9 @@ impl TuiApp {
     }
 
     fn render_top(&self, frame: &mut Frame, area: Rect) {
-        let status = if self.running {
+        let status = if self.paused {
+            Span::styled("⏸ PAUSED", Style::new().fg(Color::Yellow))
+        } else if self.running {
             Span::styled("● RUNNING", Style::new().fg(Color::Green))
         } else {
             Span::styled("■ STOPPED", Style::new().fg(Color::Red))
@@ -97,7 +114,7 @@ impl TuiApp {
             Span::raw(" │ "),
             Span::raw(elapsed),
             Span::raw(" │ "),
-            Span::styled(" q/Esc/Ctrl+C ", Style::new().fg(Color::DarkGray)),
+            Span::styled(" q/p/↑↓/PgUp/PgDn ", Style::new().fg(Color::DarkGray)),
         ]);
 
         let block = Block::default()
@@ -109,16 +126,16 @@ impl TuiApp {
     }
 
     fn render_middle(&self, frame: &mut Frame, area: Rect) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Recognition ")
+            .style(Style::new().fg(Color::Yellow));
+
         let text = if self.partial.is_empty() {
             "Waiting for speech..."
         } else {
             &self.partial
         };
-
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title(" Recognition ")
-            .style(Style::new().fg(Color::Yellow));
 
         let paragraph = Paragraph::new(text)
             .block(block)
@@ -129,11 +146,24 @@ impl TuiApp {
     }
 
     fn render_bottom(&self, frame: &mut Frame, area: Rect) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(format!(
+                " Segments ({}/{}) ",
+                self.segments.len().saturating_sub(self.scroll_offset),
+                self.segments.len()
+            ))
+            .style(Style::new().fg(Color::Blue));
+
+        let inner_height = area.height.saturating_sub(2) as usize;
+        let offset = self.scroll_offset.min(self.segments.len().saturating_sub(1));
+
         let items: Vec<Line> = self
             .segments
             .iter()
             .rev()
-            .take(5)
+            .skip(offset)
+            .take(inner_height)
             .map(|seg| {
                 let ts = format!(
                     "{:02}:{:02} --> {:02}:{:02}",
@@ -149,11 +179,6 @@ impl TuiApp {
                 ])
             })
             .collect();
-
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title(" Segments ")
-            .style(Style::new().fg(Color::Blue));
 
         let paragraph = Paragraph::new(items)
             .block(block)
@@ -176,6 +201,51 @@ impl TuiApp {
                 KeyCode::Char('c' | 'd') if is_ctrl => {
                     self.stop();
                     return Ok(false);
+                }
+                KeyCode::Char('p') => {
+                    self.paused = !self.paused;
+                    if self.paused {
+                        self.auto_scroll = false;
+                    } else {
+                        self.auto_scroll = true;
+                        self.scroll_offset = 0;
+                    }
+                }
+                KeyCode::Up => {
+                    if !self.segments.is_empty() {
+                        self.auto_scroll = false;
+                        self.scroll_offset = (self.scroll_offset + 1).min(self.segments.len().saturating_sub(1));
+                    }
+                }
+                KeyCode::Down => {
+                    if self.scroll_offset > 0 {
+                        self.scroll_offset -= 1;
+                    }
+                    if self.scroll_offset == 0 {
+                        self.auto_scroll = true;
+                    }
+                }
+                KeyCode::PageUp => {
+                    if !self.segments.is_empty() {
+                        self.auto_scroll = false;
+                        self.scroll_offset = (self.scroll_offset + 10).min(self.segments.len().saturating_sub(1));
+                    }
+                }
+                KeyCode::PageDown => {
+                    self.scroll_offset = self.scroll_offset.saturating_sub(10);
+                    if self.scroll_offset == 0 {
+                        self.auto_scroll = true;
+                    }
+                }
+                KeyCode::Home => {
+                    if !self.segments.is_empty() {
+                        self.auto_scroll = false;
+                        self.scroll_offset = self.segments.len() - 1;
+                    }
+                }
+                KeyCode::End => {
+                    self.scroll_offset = 0;
+                    self.auto_scroll = true;
                 }
                 _ => {}
             }
