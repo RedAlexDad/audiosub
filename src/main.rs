@@ -37,14 +37,14 @@ fn default_model_path() -> PathBuf {
     cache_dir.join("vosk-model-small-en-us-0.15")
 }
 
-#[cfg(feature = "vosk")]
-fn create_engine(sample_rate: f32) -> Box<dyn AsrEngine> {
-    Box::new(asr::vosk_backend::VoskEngine::new(sample_rate))
-}
-
-#[cfg(not(any(feature = "vosk", feature = "whisper")))]
-fn create_engine(_sample_rate: f32) -> Box<dyn AsrEngine> {
-    panic!("No ASR engine enabled. Enable 'vosk' or 'whisper' feature.");
+fn create_engine(engine_name: &str, sample_rate: f32) -> Box<dyn AsrEngine> {
+    match engine_name {
+        #[cfg(feature = "vosk")]
+        "vosk" => Box::new(asr::vosk_backend::VoskEngine::new(sample_rate)),
+        #[cfg(feature = "whisper")]
+        "whisper" => Box::new(asr::whisper_backend::WhisperEngine::new(sample_rate)),
+        other => panic!("Unknown ASR engine: {other}. Enable the corresponding feature (vosk or whisper)."),
+    }
 }
 
 fn run_session(
@@ -62,9 +62,12 @@ fn run_session(
     tracing::info!("Capturing from: {} ({} → {} Hz)", device, source_rate, engine_rate);
 
     let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-    let mut engine = create_engine(engine_rate as f32);
+    let mut engine = create_engine(&cfg.asr.engine, engine_rate as f32);
     engine.load_model(&model_path)?;
-    tracing::info!("ASR engine loaded model from: {}", model_path);
+    tracing::info!(
+        "ASR engine '{engine}' loaded model from: {model_path}",
+        engine = cfg.asr.engine
+    );
 
     let output_path = args
         .output
@@ -198,8 +201,12 @@ fn main() -> Result<()> {
         let engine_rate = capture.sample_rate();
 
         let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-        let mut engine = create_engine(engine_rate as f32);
+        let mut engine = create_engine(&cfg.asr.engine, engine_rate as f32);
         engine.load_model(&model_path)?;
+        tracing::info!(
+            "ASR engine '{engine}' loaded model from: {model_path}",
+            engine = cfg.asr.engine
+        );
 
         let output_path = args
             .output
