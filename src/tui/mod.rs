@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::Frame;
 use ratatui::Terminal;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -96,6 +96,8 @@ impl TuiApp {
             Span::raw(format!("{} segments", self.segment_count)),
             Span::raw(" │ "),
             Span::raw(elapsed),
+            Span::raw(" │ "),
+            Span::styled(" q/Esc/Ctrl+C ", Style::new().fg(Color::DarkGray)),
         ]);
 
         let block = Block::default()
@@ -165,8 +167,13 @@ impl TuiApp {
         if event::poll(Duration::from_millis(0))?
             && let Event::Key(key) = event::read()?
         {
+            let is_ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => {
+                    self.stop();
+                    return Ok(false);
+                }
+                KeyCode::Char('c' | 'd') if is_ctrl => {
                     self.stop();
                     return Ok(false);
                 }
