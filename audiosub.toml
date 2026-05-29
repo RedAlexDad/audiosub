@@ -1,0 +1,15 @@
+[audio]
+device = "alsa_output.pci-0000_6e_00.6.analog-stereo.monitor"
+sample_rate = 16000
+channels = 1
+
+[asr]
+engine = "vosk"
+model_path = "models/vosk-model-small-ru-0.22"
+lang = "ru-RU"
+
+[subtitle]
+format = "srt"
+output = "subtitles.srt"
+buffer_ms = 2000
+max_duration_ms = 5000

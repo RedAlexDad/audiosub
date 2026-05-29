@@ -2,19 +2,23 @@ use crate::asr::Segment;
 
 pub struct SubtitleBuffer {
     buffer_ms: u64,
+    max_duration_ms: u64,
     pool: Vec<Segment>,
 }
 
 impl SubtitleBuffer {
-    pub fn new(buffer_ms: u64) -> Self {
+    pub fn new(buffer_ms: u64, max_duration_ms: u64) -> Self {
         Self {
             buffer_ms,
+            max_duration_ms,
             pool: Vec::new(),
         }
     }
 
     pub fn push(&mut self, segment: Segment) {
-        self.pool.push(segment);
+        for split in split_segment(segment, self.max_duration_ms) {
+            self.pool.push(split);
+        }
     }
 
     pub fn flush(&mut self, stream_position_ms: u64) -> Vec<Segment> {
@@ -43,6 +47,50 @@ impl SubtitleBuffer {
     pub fn drain(&mut self) -> Vec<Segment> {
         std::mem::take(&mut self.pool)
     }
+}
+
+pub fn split_segment(seg: Segment, max_duration_ms: u64) -> Vec<Segment> {
+    if max_duration_ms == 0 || seg.end_ms - seg.start_ms <= max_duration_ms {
+        return vec![seg];
+    }
+
+    let duration = seg.end_ms - seg.start_ms;
+    let count = duration.div_ceil(max_duration_ms);
+    let chunk_duration = duration / count;
+
+    let mut result = Vec::with_capacity(count as usize);
+    let mut offset = seg.start_ms;
+
+    let words: Vec<&str> = seg.text.split_whitespace().collect();
+    let words_per_chunk = if count > 0 {
+        words.len() / count as usize
+    } else {
+        words.len()
+    };
+
+    for i in 0..count {
+        let chunk_end = if i == count - 1 {
+            seg.end_ms
+        } else {
+            offset + chunk_duration
+        };
+        let start_idx = i as usize * words_per_chunk;
+        let end_idx = if i == count - 1 {
+            words.len()
+        } else {
+            start_idx + words_per_chunk
+        };
+
+        let text = words[start_idx..end_idx].join(" ");
+        result.push(Segment {
+            start_ms: offset,
+            end_ms: chunk_end,
+            text,
+        });
+        offset = chunk_end;
+    }
+
+    result
 }
 
 fn overlap_ms(a: &Segment, b: &Segment) -> bool {

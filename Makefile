@@ -13,11 +13,6 @@ RED    := \033[0;31m
 BOLD   := \033[1m
 NC     := \033[0m
 
-ifneq (,$(wildcard .env))
-    include .env
-    export
-endif
-
 # Resolve model path to absolute — Vosk needs absolute path
 AUDIOSUB_MODEL := $(CURDIR)/$(MODEL_DIR)/$(MODEL_NAME)
 
@@ -38,7 +33,8 @@ help:
 	@echo "  $(GREEN)all$(NC)             Show this help"
 	@echo "  $(GREEN)build$(NC)           Compile the project"
 	@echo "  $(GREEN)release$(NC)         Compile in release mode"
-	@echo "  $(GREEN)run [ARGS]$(NC)      Run with arguments"
+	@echo "  $(GREEN)run [ARGS]$(NC)      Run with TUI (default, press q/Esc to quit)"
+	@echo "  $(GREEN)cli [ARGS]$(NC)      Run without TUI (plain CLI mode)"
 	@echo "  $(GREEN)model-download$(NC)  Download Vosk model (Russian)"
 	@echo "  $(GREEN)test$(NC)            Run tests"
 	@echo "  $(GREEN)check$(NC)           cargo check (fast)"
@@ -57,6 +53,7 @@ help:
 	@echo "  make model-download"
 	@echo "  make run"
 	@echo "  make run ARGS='-- --list-devices'"
+	@echo "  make cli"
 	@echo "  make docker"
 
 build:
@@ -84,8 +81,12 @@ test:
 	@echo "$(GREEN)✓ Tests passed$(NC)"
 
 run:
-	@echo "$(CYAN)→ Starting $(APP_NAME)...$(NC)"
+	@echo "$(CYAN)→ Starting $(APP_NAME) (TUI mode)...$(NC)"
 	LD_LIBRARY_PATH=/home/redalexdad/.local/lib cargo run -- $(ARGS)
+
+cli:
+	@echo "$(CYAN)→ Starting $(APP_NAME) (CLI mode)...$(NC)"
+	LD_LIBRARY_PATH=/home/redalexdad/.local/lib cargo run -- --no-tui $(ARGS)
 
 check:
 	@echo "$(CYAN)→ Checking...$(NC)"

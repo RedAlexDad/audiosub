@@ -11,6 +11,7 @@ use std::io;
 use std::time::Duration;
 
 use crate::asr::Segment;
+use crate::subtitle;
 
 pub struct TuiApp {
     partial: String,
@@ -18,18 +19,20 @@ pub struct TuiApp {
     segment_count: usize,
     total_samples: usize,
     engine_rate: u32,
+    max_duration_ms: u64,
     elapsed: Duration,
     running: bool,
 }
 
 impl TuiApp {
-    pub fn new(engine_rate: u32) -> Self {
+    pub fn new(engine_rate: u32, max_duration_ms: u64) -> Self {
         Self {
             partial: String::new(),
             segments: Vec::new(),
             segment_count: 0,
             total_samples: 0,
             engine_rate,
+            max_duration_ms,
             elapsed: Duration::default(),
             running: true,
         }
@@ -52,8 +55,10 @@ impl TuiApp {
 
     pub fn add_segments(&mut self, segments: Vec<Segment>) {
         for seg in segments {
-            self.segment_count += 1;
-            self.segments.push(seg);
+            for split in subtitle::split_segment(seg, self.max_duration_ms) {
+                self.segment_count += 1;
+                self.segments.push(split);
+            }
         }
         if self.segments.len() > 100 {
             self.segments.drain(..self.segments.len() - 100);

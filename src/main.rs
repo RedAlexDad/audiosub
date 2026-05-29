@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use clap::Parser;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 mod audio;
@@ -16,6 +16,19 @@ mod subtitle;
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 #[cfg(feature = "tui")]
 mod tui;
+
+fn resolve_model_path(cli_path: Option<&PathBuf>, cfg_path: &Path) -> String {
+    let base = cli_path
+        .cloned()
+        .or_else(|| Some(cfg_path.to_path_buf()))
+        .unwrap_or_else(default_model_path);
+    let abs = if base.is_absolute() {
+        base
+    } else {
+        std::env::current_dir().unwrap_or_default().join(&base)
+    };
+    abs.to_string_lossy().to_string()
+}
 
 fn default_model_path() -> PathBuf {
     let cache_dir = directories::BaseDirs::new()
@@ -48,11 +61,10 @@ fn run_session(
 
     tracing::info!("Capturing from: {} ({} → {} Hz)", device, source_rate, engine_rate);
 
-    let model_path = args.model.clone().unwrap_or_else(default_model_path);
-
+    let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
     let mut engine = create_engine(engine_rate as f32);
-    engine.load_model(model_path.to_str().unwrap_or(""))?;
-    tracing::info!("ASR engine loaded model from: {}", model_path.display());
+    engine.load_model(&model_path)?;
+    tracing::info!("ASR engine loaded model from: {}", model_path);
 
     let output_path = args
         .output
@@ -61,8 +73,9 @@ fn run_session(
         .unwrap_or_else(|| PathBuf::from("output.srt"));
     let output_format = args.format.clone().unwrap_or(cfg.subtitle.format.clone());
 
+    let max_duration = args.max_duration.unwrap_or(cfg.subtitle.max_duration_ms);
     let mut output = SubtitleOutput::create(&output_path, &output_format)?;
-    let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
+    let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms, max_duration);
 
     let chunk_size = (source_rate as usize) / 10;
     let start = std::time::Instant::now();
@@ -83,17 +96,19 @@ fn run_session(
             let stream_pos_ms = (total_samples as u64 * 1000) / engine_rate as u64;
 
             for seg in engine.drain_segments()? {
-                segment_count += 1;
-                tracing::info!(
-                    "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
-                    segment_count,
-                    seg.start_ms / 60000,
-                    seg.start_ms % 60000 / 1000,
-                    seg.end_ms / 60000,
-                    seg.end_ms % 60000 / 1000,
-                    seg.text
-                );
-                buffer.push(seg.clone());
+                for split in subtitle::split_segment(seg, max_duration) {
+                    segment_count += 1;
+                    tracing::info!(
+                        "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
+                        segment_count,
+                        split.start_ms / 60000,
+                        split.start_ms % 60000 / 1000,
+                        split.end_ms / 60000,
+                        split.end_ms % 60000 / 1000,
+                        split.text
+                    );
+                    buffer.push(split);
+                }
             }
 
             for ready in buffer.flush(stream_pos_ms) {
@@ -104,19 +119,20 @@ fn run_session(
 
     capture.stop()?;
 
-    let final_segments = engine.finalize()?;
-    for seg in &final_segments {
-        segment_count += 1;
-        tracing::info!(
-            "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
-            segment_count,
-            seg.start_ms / 60000,
-            seg.start_ms % 60000 / 1000,
-            seg.end_ms / 60000,
-            seg.end_ms % 60000 / 1000,
-            seg.text
-        );
-        buffer.push(seg.clone());
+    for seg in engine.finalize()? {
+        for split in subtitle::split_segment(seg, max_duration) {
+            segment_count += 1;
+            tracing::info!(
+                "[{}] {:06}:{:06} --> {:06}:{:06}  {}",
+                segment_count,
+                split.start_ms / 60000,
+                split.start_ms % 60000 / 1000,
+                split.end_ms / 60000,
+                split.end_ms % 60000 / 1000,
+                split.text
+            );
+            buffer.push(split);
+        }
     }
 
     for ready in buffer.drain() {
@@ -169,8 +185,9 @@ fn main() -> Result<()> {
         .unwrap_or_else(|| "default".into());
 
     let duration = Duration::from_secs(args.duration.unwrap_or(u64::MAX));
+    let max_duration = args.max_duration.unwrap_or(cfg.subtitle.max_duration_ms);
 
-    if !args.tui {
+    if args.no_tui {
         return run_session(&args, &cfg, &device, cfg.audio.sample_rate, duration);
     }
 
@@ -180,9 +197,9 @@ fn main() -> Result<()> {
         capture.start()?;
         let engine_rate = capture.sample_rate();
 
-        let model_path = args.model.clone().unwrap_or_else(default_model_path);
+        let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
         let mut engine = create_engine(engine_rate as f32);
-        engine.load_model(model_path.to_str().unwrap_or(""))?;
+        engine.load_model(&model_path)?;
 
         let output_path = args
             .output
@@ -191,10 +208,10 @@ fn main() -> Result<()> {
             .unwrap_or_else(|| PathBuf::from("output.srt"));
         let output_format = args.format.clone().unwrap_or(cfg.subtitle.format.clone());
         let mut output = SubtitleOutput::create(&output_path, &output_format)?;
-        let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms);
+        let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms, max_duration);
 
         let chunk_size = (cfg.audio.sample_rate as usize) / 10;
-        let mut app = tui::TuiApp::new(engine_rate);
+        let mut app = tui::TuiApp::new(engine_rate, max_duration);
         app.run_with_capture(&mut capture, engine.as_mut(), &mut output, &mut buffer, chunk_size)
     }
 

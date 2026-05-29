@@ -28,6 +28,7 @@ pub struct SubtitleConfig {
     pub format: String,
     pub output: PathBuf,
     pub buffer_ms: u64,
+    pub max_duration_ms: u64,
 }
 
 impl Default for Config {
@@ -47,6 +48,7 @@ impl Default for Config {
                 format: "srt".into(),
                 output: PathBuf::from("output.srt"),
                 buffer_ms: 2000,
+                max_duration_ms: 10000,
             },
         }
     }
@@ -58,19 +60,22 @@ fn dirs() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("/tmp/audiosub"))
 }
 
+const CONFIG_FILE_NAME: &str = "audiosub.toml";
+
 impl Config {
     pub fn load(path: Option<&PathBuf>) -> Result<Self> {
         if let Some(p) = path {
             let content = std::fs::read_to_string(p).context(format!("Failed to read config from {:?}", p))?;
-            Ok(toml::from_str(&content)?)
-        } else {
-            let default_path = dirs().join("config.toml");
-            if default_path.exists() {
-                let content = std::fs::read_to_string(&default_path)?;
-                Ok(toml::from_str(&content)?)
-            } else {
-                Ok(Self::default())
+            return Ok(toml::from_str(&content)?);
+        }
+
+        for candidate in &[PathBuf::from(CONFIG_FILE_NAME), dirs().join(CONFIG_FILE_NAME)] {
+            if candidate.exists() {
+                let content = std::fs::read_to_string(candidate)?;
+                return Ok(toml::from_str(&content)?);
             }
         }
+
+        Ok(Self::default())
     }
 }
