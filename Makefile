@@ -23,6 +23,9 @@ NC     := \033[0m
 # Resolve model path to absolute — Vosk needs absolute path
 AUDIOSUB_MODEL := $(CURDIR)/$(MODEL_DIR)/$(MODEL_NAME)
 
+# Docker engine selection: vosk, whisper, both
+ENGINE ?= vosk
+
 .PHONY: all build build-whisper build-both release release-whisper release-both release-linux release-win release-mac model-download model-whisper test run run-whisper run-both cli cli-whisper check lint fmt verify ci-check clean docker docker-build docker-run report help
 
 all: help
@@ -77,9 +80,10 @@ help:
 	@echo "---"
 	@echo ""
 	@echo "$(CYAN)## Docker ##$(NC)"
-	@echo "  $(GREEN)docker$(NC)           Собрать + запустить через compose"
-	@echo "  $(GREEN)docker-build$(NC)     Собрать Docker-образ"
-	@echo "  $(GREEN)docker-run$(NC)       Запустить через docker compose"
+	@echo "  $(GREEN)docker [ENGINE=vosk]$(NC)    Собрать + запустить через compose"
+	@echo "  $(GREEN)docker-build [ENGINE=vosk]$(NC)  Собрать Docker-образ"
+	@echo "  $(GREEN)docker-run [ENGINE=vosk]$(NC)   Запустить через docker compose"
+	@echo "  $(YELLOW)  ENGINE=whisper / ENGINE=both для других бекендов$(NC)"
 	@echo ""
 	@echo "---"
 	@echo ""
@@ -226,14 +230,22 @@ clean:
 	cargo clean
 	@echo "$(GREEN)✓ Cleaned$(NC)"
 
-docker-build:
-	@echo "$(CYAN)→ Building Docker image...$(NC)"
-	DOCKER_BUILDKIT=0 docker build --network host -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-	@echo "$(GREEN)✓ Docker image built$(NC)"
+docker-build: | lib/vosk/libvosk.so
+	@echo "$(CYAN)→ Building Docker image (ENGINE=$(ENGINE))...$(NC)"
+	ENGINE=$(ENGINE) DOCKER_BUILDKIT=0 docker build \
+		--network host \
+		--build-arg ENGINE=$(ENGINE) \
+		-t $(DOCKER_IMAGE):$(ENGINE) .
+	@echo "$(GREEN)✓ Docker image built: $(DOCKER_IMAGE):$(ENGINE)$(NC)"
+	@echo "$(YELLOW)  ENGINE=$(ENGINE) — set ENGINE=whisper or ENGINE=both for other backends$(NC)"
+
+lib/vosk/libvosk.so:
+	@mkdir -p lib/vosk
+	cp /home/redalexdad/.local/lib/libvosk.so lib/vosk/libvosk.so
 
 docker-run:
 	@echo "$(CYAN)→ Starting Docker Compose...$(NC)"
-	USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) docker compose up
+	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) docker compose up
 
 docker: docker-run
 

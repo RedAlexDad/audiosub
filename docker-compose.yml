@@ -3,15 +3,23 @@ services:
     build:
       context: .
       network: host
-    image: audiosub:latest
+      args:
+        ENGINE: ${ENGINE:-vosk}
+    image: audiosub:${ENGINE:-vosk}
     environment:
       - PULSE_SERVER=unix:/run/user/${USER_ID:-1000}/pulse/native
-      - AUDIOSUB_MODEL_PATH=/cache/audiosub/models/vosk-model-small-ru-0.22
+      - RUST_LOG=${RUST_LOG:-info}
+      - AUDIOSUB_ENGINE=${ENGINE:-vosk}
     volumes:
       - /run/user/${USER_ID:-1000}/pulse:/run/user/${USER_ID:-1000}/pulse
+      - ./models:/app/models:ro
       - ./output:/output
+      - audiosub-cache:/root/.cache/audiosub
     user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
     command: [
       "--device", "alsa_output.pci-0000_6e_00.6.analog-stereo.monitor",
       "--output", "/output/subtitles.srt"
     ]
+
+volumes:
+  audiosub-cache:
