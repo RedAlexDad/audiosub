@@ -1,6 +1,7 @@
 use chrono::Local;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Write;
+use std::path::Path;
 
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
@@ -64,25 +65,27 @@ impl TuiApp {
 
     fn export_srt(&mut self) -> Result<()> {
         let now = Local::now().format("%Y-%m-%d_%H-%M-%S");
-        let path = format!("audiosub_{}.srt", now);
+        let path = Path::new("saved").join(format!("audiosub_{}.srt", now));
+        fs::create_dir_all("saved")?;
         let mut file = File::create(&path)?;
         for (i, seg) in self.segments.iter().enumerate() {
             let start = ms_to_srt(seg.start_ms);
             let end = ms_to_srt(seg.end_ms);
             writeln!(file, "{}\n{} --> {}\n{}\n", i + 1, start, end, seg.text)?;
         }
-        self.message = Some((format!("Saved: {}", path), 15));
+        self.message = Some((format!("Saved: {}", path.display()), 15));
         Ok(())
     }
 
     fn export_txt(&mut self) -> Result<()> {
         let now = Local::now().format("%Y-%m-%d_%H-%M-%S");
-        let path = format!("audiosub_{}.txt", now);
+        let path = Path::new("saved").join(format!("audiosub_{}.txt", now));
+        fs::create_dir_all("saved")?;
         let mut file = File::create(&path)?;
         for seg in &self.segments {
             writeln!(file, "{}", seg.text)?;
         }
-        self.message = Some((format!("Saved: {}", path), 15));
+        self.message = Some((format!("Saved: {}", path.display()), 15));
         Ok(())
     }
 
@@ -251,7 +254,7 @@ impl TuiApp {
                     self.stop();
                     return Ok(false);
                 }
-                KeyCode::Char('c' | 'd') if is_ctrl => {
+                KeyCode::Char('d') if is_ctrl => {
                     self.stop();
                     return Ok(false);
                 }
