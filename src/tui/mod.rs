@@ -127,6 +127,9 @@ impl TuiApp {
             && *ticks > 0
         {
             *ticks -= 1;
+            if *ticks == 0 {
+                self.message = None;
+            }
         }
 
         let area = frame.area();
