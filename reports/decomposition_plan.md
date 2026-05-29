@@ -37,9 +37,9 @@
 | 3.1 | **Абстракция:** трейт `AsrEngine { fn transcribe(chunk) -> Vec<Segment> }` | `[x]` |
 | 3.2 | **Загрузка моделей:** авто-загрузка моделей по URL, кэширование в `~/.cache/audiosub/models` | `[ ]` |
 | 3.3 | **Backend: Vosk API:** `vosk-rs` — инициализация модели, инкрементальное распознавание | `[x]` |
-| 3.4 | **Backend: Whisper.cpp:** запуск whisper.cpp через `whisper-rs`, batching | `[ ]` |
+| 3.4 | **Backend: Whisper.cpp:** запуск whisper.cpp через `whisper-rs`, batching | `[x]` |
 | 3.5 | **Backend: Whisper.cpp (реальное время):** инкрементальный режим (слияние окон) | `[ ]` |
-| 3.6 | **Переключение моделей:** hot-reload или restart сессии при смене модели | `[ ]` |
+| 3.6 | **Переключение моделей:** hot-reload или restart сессии при смене модели | `[x]` |
 | 3.7 | **Язык:** аргумент `--lang` / автодетект языка | `[ ]` |
 
 ## 4. Генерация субтитров (Subtitle Pipeline)
@@ -109,8 +109,8 @@
 - `[x]` 5.2 — TUI: ratatui с live-лентой, сегментами, статусом
 
 **Phase 2 — Whisper.cpp**
-- `[ ]` 3.4 — Whisper.cpp backend
-- `[ ]` 3.6 — переключение движков
+- `[x]` 3.4 — Whisper.cpp backend
+- `[x]` 3.6 — переключение движков (make build-both / run-both / release-both)
 
 **Phase 3 — Полировка**
 - `[x]` 4.4 — VTT

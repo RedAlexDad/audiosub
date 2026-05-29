@@ -23,49 +23,72 @@ NC     := \033[0m
 # Resolve model path to absolute — Vosk needs absolute path
 AUDIOSUB_MODEL := $(CURDIR)/$(MODEL_DIR)/$(MODEL_NAME)
 
-.PHONY: all build build-whisper release release-whisper release-linux release-win release-mac model-download model-whisper test run run-whisper cli cli-whisper check lint fmt verify ci-check clean docker docker-build docker-run report help
+.PHONY: all build build-whisper build-both release release-whisper release-both release-linux release-win release-mac model-download model-whisper test run run-whisper run-both cli cli-whisper check lint fmt verify ci-check clean docker docker-build docker-run report help
 
 all: help
 
 help:
 	@echo "$(BOLD)$(APP_NAME)$(NC) - real-time automatic subtitles"
 	@echo ""
-	@echo "$(CYAN)Usage:$(NC)"
-	@echo "  make $(GREEN)<target>$(NC)"
+	@echo "$(CYAN)Использование:$(NC)"
+	@echo "  make $(GREEN)<цель>$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Note:$(NC)"
-	@echo "  Vosk:   Requires libvosk.so in /home/redalexdad/.local/lib/"
-	@echo "          Download from https://github.com/alphacep/vosk-api/releases"
-	@echo "  Whisper: Requires WHISPER_DONT_GENERATE_BINDINGS=1 in env if bindgen fails"
+	@echo "$(YELLOW)Примечания:$(NC)"
+	@echo "  Vosk:   Требуется libvosk.so в /home/redalexdad/.local/lib/"
+	@echo "          Скачать: https://github.com/alphacep/vosk-api/releases"
+	@echo "  Whisper: Нужен WHISPER_DONT_GENERATE_BINDINGS=1, если bindgen падает"
 	@echo ""
-	@echo "$(CYAN)Targets:$(NC)"
-	@echo "  $(GREEN)all$(NC)              Show this help"
-	@echo "  $(GREEN)build$(NC)            Compile the project"
-	@echo "  $(GREEN)build-whisper$(NC)    Compile with whisper backend"
-	@echo "  $(GREEN)release$(NC)          Compile in release mode (Linux)"
-	@echo "  $(GREEN)release-whisper$(NC)  Release build with whisper backend"
-	@echo "  $(GREEN)release-win$(NC)      Cross-compile for Windows (needs mingw-w64)"
-	@echo "  $(GREEN)release-mac$(NC)      Build for macOS (run on macOS)"
-	@echo "  $(GREEN)run [ARGS]$(NC)       Run with TUI (default, press q/Esc to quit)"
-	@echo "  $(GREEN)run-whisper [ARGS]$(NC)  Run with whisper backend"
-	@echo "  $(GREEN)cli [ARGS]$(NC)       Run without TUI (plain CLI mode)"
-	@echo "  $(GREEN)cli-whisper [ARGS]$(NC)  Run CLI mode with whisper backend"
-	@echo "  $(GREEN)model-download$(NC)   Download Vosk model (Russian)"
-	@echo "  $(GREEN)model-whisper$(NC)    Download Whisper ggml-base model"
-	@echo "  $(GREEN)test$(NC)             Run tests"
-	@echo "  $(GREEN)check$(NC)            cargo check (fast)"
+	@echo "$(CYAN)## Сборка ##$(NC)"
+	@echo "  $(GREEN)all$(NC)              Показать эту справку"
+	@echo "  $(GREEN)build$(NC)            Собрать проект"
+	@echo "  $(GREEN)build-whisper$(NC)    Собрать с whisper"
+	@echo "  $(GREEN)build-both$(NC)       Собрать с vosk + whisper (переключение в audiosub.toml)"
+	@echo "  $(GREEN)release$(NC)          Собрать в release-режиме (Linux)"
+	@echo "  $(GREEN)release-whisper$(NC)  Release-сборка с whisper"
+	@echo "  $(GREEN)release-both$(NC)    Release-сборка с vosk + whisper"
+	@echo "  $(GREEN)release-win$(NC)      Кросс-сборка для Windows (нужен mingw-w64)"
+	@echo "  $(GREEN)release-mac$(NC)      Собрать для macOS (запускать на macOS)"
+	@echo ""
+	@echo "---"
+	@echo ""
+	@echo "$(CYAN)## Запуск ##$(NC)"
+	@echo "  $(GREEN)run [ARGS]$(NC)       Запустить с TUI (q/Esc для выхода)"
+	@echo "  $(GREEN)run-whisper [ARGS]$(NC)  Запустить с whisper"
+	@echo "  $(GREEN)run-both [ARGS]$(NC)  Запустить с vosk + whisper (выбор через audiosub.toml)"
+	@echo "  $(GREEN)cli [ARGS]$(NC)       Запустить без TUI (консольный режим)"
+	@echo "  $(GREEN)cli-whisper [ARGS]$(NC)  Консольный режим с whisper"
+	@echo ""
+	@echo "---"
+	@echo ""
+	@echo "$(CYAN)## Модели ##$(NC)"
+	@echo "  $(GREEN)model-download$(NC)   Скачать модель Vosk (русская)"
+	@echo "  $(GREEN)model-whisper$(NC)    Скачать модель Whisper ggml-base"
+	@echo ""
+	@echo "---"
+	@echo ""
+	@echo "$(CYAN)## Проверка качества ##$(NC)"
+	@echo "  $(GREEN)test$(NC)             Запустить тесты"
+	@echo "  $(GREEN)check$(NC)            cargo check (быстрая проверка)"
 	@echo "  $(GREEN)lint$(NC)             cargo clippy"
-	@echo "  $(GREEN)fmt$(NC)              Check formatting"
-	@echo "  $(GREEN)verify$(NC)           Run test + check + lint + fmt (CI pipeline)"
-	@echo "  $(GREEN)ci-check$(NC)        Run full CI simulation (scripts/ci-check.sh)"
-	@echo "  $(GREEN)clean$(NC)            Remove build artifacts"
-	@echo "  $(GREEN)docker$(NC)           Build + run via compose"
-	@echo "  $(GREEN)docker-build$(NC)     Build Docker image"
-	@echo "  $(GREEN)docker-run$(NC)       Run via docker compose"
-	@echo "  $(GREEN)report$(NC)           Create report template"
-	@echo "  $(GREEN)help$(NC)             Show this message"
+	@echo "  $(GREEN)fmt$(NC)              Проверить форматирование"
+	@echo "  $(GREEN)verify$(NC)           test + check + lint + fmt (CI-конвейер)"
+	@echo "  $(GREEN)ci-check$(NC)         Полная CI-симуляция (scripts/ci-check.sh)"
 	@echo ""
-	@echo "$(YELLOW)Examples:$(NC)"
+	@echo "---"
+	@echo ""
+	@echo "$(CYAN)## Docker ##$(NC)"
+	@echo "  $(GREEN)docker$(NC)           Собрать + запустить через compose"
+	@echo "  $(GREEN)docker-build$(NC)     Собрать Docker-образ"
+	@echo "  $(GREEN)docker-run$(NC)       Запустить через docker compose"
+	@echo ""
+	@echo "---"
+	@echo ""
+	@echo "$(CYAN)## Утилиты ##$(NC)"
+	@echo "  $(GREEN)clean$(NC)            Очистить артефакты сборки"
+	@echo "  $(GREEN)report$(NC)           Создать шаблон отчёта"
+	@echo "  $(GREEN)help$(NC)             Показать это сообщение"
+	@echo ""
+	@echo "$(YELLOW)Примеры:$(NC)"
 	@echo "  make model-download"
 	@echo "  make run"
 	@echo "  make run-whisper"
@@ -83,6 +106,12 @@ build-whisper:
 	WHISPER_DONT_GENERATE_BINDINGS=1 cargo build --no-default-features --features whisper,tui
 	@echo "$(GREEN)✓ Build complete (whisper)$(NC)"
 
+build-both:
+	@echo "$(CYAN)→ Building $(APP_NAME) with vosk + whisper backends...$(NC)"
+	WHISPER_DONT_GENERATE_BINDINGS=1 cargo build --features "vosk,whisper,tui"
+	@echo "$(GREEN)✓ Build complete (vosk + whisper)$(NC)"
+	@echo "$(YELLOW)  Set engine=\"vosk\" or engine=\"whisper\" in audiosub.toml to switch$(NC)"
+
 release:
 	@echo "$(CYAN)→ Building $(APP_NAME) (release)...$(NC)"
 	cargo build --release
@@ -96,6 +125,14 @@ release-whisper:
 	mkdir -p release
 	cp target/release/audiosub release/audiosub-whisper
 	@echo "$(GREEN)✓ Release build complete — release/audiosub-whisper$(NC)"
+
+release-both:
+	@echo "$(CYAN)→ Building $(APP_NAME) (release, vosk + whisper)...$(NC)"
+	WHISPER_DONT_GENERATE_BINDINGS=1 cargo build --release --features "vosk,whisper,tui"
+	mkdir -p release
+	cp target/release/audiosub release/audiosub-both
+	@echo "$(GREEN)✓ Release build complete — release/audiosub-both$(NC)"
+	@echo "$(YELLOW)  Set engine=\"vosk\" or engine=\"whisper\" in audiosub.toml to switch$(NC)"
 
 release-linux: release
 
@@ -144,6 +181,11 @@ run:
 run-whisper:
 	@echo "$(CYAN)→ Starting $(APP_NAME) (TUI, whisper backend)...$(NC)"
 	WHISPER_DONT_GENERATE_BINDINGS=1 cargo run --no-default-features --features whisper,tui -- $(ARGS)
+
+run-both:
+	@echo "$(CYAN)→ Starting $(APP_NAME) (TUI, vosk + whisper)...$(NC)"
+	@echo "$(YELLOW)  Switch engine in audiosub.toml: engine=\"vosk\" or engine=\"whisper\"$(NC)"
+	LD_LIBRARY_PATH=/home/redalexdad/.local/lib WHISPER_DONT_GENERATE_BINDINGS=1 cargo run --features "vosk,whisper,tui" -- $(ARGS)
 
 cli:
 	@echo "$(CYAN)→ Starting $(APP_NAME) (CLI mode)...$(NC)"
