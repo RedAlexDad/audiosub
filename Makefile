@@ -64,7 +64,9 @@ build:
 release:
 	@echo "$(CYAN)→ Building $(APP_NAME) (release)...$(NC)"
 	cargo build --release
-	@echo "$(GREEN)✓ Release build complete$(NC)"
+	mkdir -p release
+	cp target/release/audiosub release/audiosub
+	@echo "$(GREEN)✓ Release build complete — release/audiosub$(NC)"
 
 model-download:
 	@echo "$(CYAN)→ Downloading $(MODEL_NAME)...$(NC)"
