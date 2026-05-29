@@ -1,3 +1,7 @@
+use chrono::Local;
+use std::fs::File;
+use std::io::Write;
+
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::Frame;
@@ -13,6 +17,14 @@ use std::time::Duration;
 use crate::asr::Segment;
 use crate::subtitle;
 
+fn ms_to_srt(ms: u64) -> String {
+    let h = ms / 3_600_000;
+    let m = (ms % 3_600_000) / 60_000;
+    let s = (ms % 60_000) / 1000;
+    let millis = ms % 1000;
+    format!("{:02}:{:02}:{:02},{:03}", h, m, s, millis)
+}
+
 pub struct TuiApp {
     partial: String,
     segments: Vec<Segment>,
@@ -25,6 +37,7 @@ pub struct TuiApp {
     scroll_offset: usize,
     auto_scroll: bool,
     paused: bool,
+    message: Option<(String, u8)>,
 }
 
 impl TuiApp {
@@ -41,11 +54,36 @@ impl TuiApp {
             scroll_offset: 0,
             auto_scroll: true,
             paused: false,
+            message: None,
         }
     }
 
     pub fn is_running(&self) -> bool {
         self.running
+    }
+
+    fn export_srt(&mut self) -> Result<()> {
+        let now = Local::now().format("%Y-%m-%d_%H-%M-%S");
+        let path = format!("audiosub_{}.srt", now);
+        let mut file = File::create(&path)?;
+        for (i, seg) in self.segments.iter().enumerate() {
+            let start = ms_to_srt(seg.start_ms);
+            let end = ms_to_srt(seg.end_ms);
+            writeln!(file, "{}\n{} --> {}\n{}\n", i + 1, start, end, seg.text)?;
+        }
+        self.message = Some((format!("Saved: {}", path), 15));
+        Ok(())
+    }
+
+    fn export_txt(&mut self) -> Result<()> {
+        let now = Local::now().format("%Y-%m-%d_%H-%M-%S");
+        let path = format!("audiosub_{}.txt", now);
+        let mut file = File::create(&path)?;
+        for seg in &self.segments {
+            writeln!(file, "{}", seg.text)?;
+        }
+        self.message = Some((format!("Saved: {}", path), 15));
+        Ok(())
     }
 
     pub fn update_audio(&mut self, samples: usize) {
@@ -85,6 +123,12 @@ impl TuiApp {
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
+        if let Some((_, ref mut ticks)) = self.message
+            && *ticks > 0
+        {
+            *ticks -= 1;
+        }
+
         let area = frame.area();
         let [top, middle, bottom] =
             Layout::vertical([Constraint::Length(3), Constraint::Fill(1), Constraint::Length(18)]).areas(area);
@@ -114,7 +158,7 @@ impl TuiApp {
             Span::raw(" │ "),
             Span::raw(elapsed),
             Span::raw(" │ "),
-            Span::styled(" q/p/↑↓/PgUp/PgDn ", Style::new().fg(Color::DarkGray)),
+            Span::styled(" q/p/s/S/↑↓ ", Style::new().fg(Color::DarkGray)),
         ]);
 
         let block = Block::default()
@@ -131,16 +175,21 @@ impl TuiApp {
             .title(" Recognition ")
             .style(Style::new().fg(Color::Yellow));
 
-        let text = if self.partial.is_empty() {
+        let text = if let Some((ref msg, _)) = self.message {
+            msg.as_str()
+        } else if self.partial.is_empty() {
             "Waiting for speech..."
         } else {
             &self.partial
         };
 
-        let paragraph = Paragraph::new(text)
-            .block(block)
-            .style(Style::new().fg(Color::White))
-            .wrap(Wrap { trim: true });
+        let style = if self.message.is_some() {
+            Style::new().fg(Color::Green).add_modifier(Modifier::BOLD)
+        } else {
+            Style::new().fg(Color::White)
+        };
+
+        let paragraph = Paragraph::new(text).block(block).style(style).wrap(Wrap { trim: true });
 
         frame.render_widget(paragraph, area);
     }
@@ -193,6 +242,7 @@ impl TuiApp {
             && let Event::Key(key) = event::read()?
         {
             let is_ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
+            let is_shift = key.modifiers.contains(KeyModifiers::SHIFT);
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => {
                     self.stop();
@@ -210,6 +260,12 @@ impl TuiApp {
                         self.auto_scroll = true;
                         self.scroll_offset = 0;
                     }
+                }
+                KeyCode::Char('s') if is_shift => {
+                    let _ = self.export_txt();
+                }
+                KeyCode::Char('s') => {
+                    let _ = self.export_srt();
                 }
                 KeyCode::Up => {
                     if !self.segments.is_empty() {

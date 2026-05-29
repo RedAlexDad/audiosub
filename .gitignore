@@ -7,3 +7,4 @@ Cargo.lock
 *.vtt
 output/
 /models
+.vscode/
