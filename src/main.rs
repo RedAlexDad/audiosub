@@ -12,6 +12,7 @@ use crate::asr::AsrEngine;
 mod cli;
 mod config;
 mod logging;
+mod redirect_stderr;
 mod subtitle;
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 #[cfg(feature = "tui")]
@@ -43,7 +44,20 @@ fn create_engine(engine_name: &str, sample_rate: f32) -> Box<dyn AsrEngine> {
         "vosk" => Box::new(asr::vosk_backend::VoskEngine::new(sample_rate)),
         #[cfg(feature = "whisper")]
         "whisper" => Box::new(asr::whisper_backend::WhisperEngine::new(sample_rate)),
-        other => panic!("Unknown ASR engine: {other}. Enable the corresponding feature (vosk or whisper)."),
+        _ => {
+            #[cfg(feature = "vosk")]
+            {
+                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to vosk");
+                return Box::new(asr::vosk_backend::VoskEngine::new(sample_rate));
+            }
+            #[cfg(all(feature = "whisper", not(feature = "vosk")))]
+            {
+                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to whisper");
+                return Box::new(asr::whisper_backend::WhisperEngine::new(sample_rate));
+            }
+            #[cfg(not(any(feature = "vosk", feature = "whisper")))]
+            panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.");
+        }
     }
 }
 
@@ -161,6 +175,9 @@ fn main() -> Result<()> {
 
     logging::init(args.verbose)?;
 
+    #[cfg(feature = "whisper")]
+    whisper_rs::install_logging_hooks();
+
     let cfg = config::Config::load(args.config.as_ref())?;
 
     tracing::info!("audiosub v{} starting", env!("CARGO_PKG_VERSION"));
@@ -202,6 +219,10 @@ fn main() -> Result<()> {
 
         let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
         let mut engine = create_engine(&cfg.asr.engine, engine_rate as f32);
+
+        let _stderr_guard =
+            redirect_stderr::StderrRedirect::new("/tmp/audiosub_stderr.log")?;
+
         engine.load_model(&model_path)?;
         tracing::info!(
             "ASR engine '{engine}' loaded model from: {model_path}",

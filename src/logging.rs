@@ -8,7 +8,9 @@ pub fn init(verbose: u8) -> Result<()> {
         _ => "trace",
     };
 
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(format!("audiosub={}", level)));
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        EnvFilter::new(format!("audiosub={},whisper_rs=warn,ggml=warn", level))
+    });
 
     tracing_subscriber::fmt()
         .with_env_filter(filter)

@@ -34,7 +34,7 @@ rubato = "3"
 
 # ASR
 vosk = { version = "0.3", optional = true }
-whisper-rs = { version = "0.14", optional = true, features = ["default"] }
+whisper-rs = { version = "0.14", optional = true, features = ["default", "tracing_backend"] }
 
 # Subtitle formatting
 chrono = "0.4"
@@ -52,6 +52,7 @@ reqwest = { version = "0.12", features = ["stream"], optional = true }
 
 # Utility
 duct = "0.13"
+libc = "0.2"
 
 [profile.release]
 opt-level = 3
