@@ -248,7 +248,6 @@ impl TuiApp {
             && let Event::Key(key) = event::read()?
         {
             let is_ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
-            let is_shift = key.modifiers.contains(KeyModifiers::SHIFT);
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => {
                     self.stop();
@@ -267,7 +266,7 @@ impl TuiApp {
                         self.scroll_offset = 0;
                     }
                 }
-                KeyCode::Char('s') if is_shift => {
+                KeyCode::Char('S') => {
                     let _ = self.export_txt();
                 }
                 KeyCode::Char('s') => {
