@@ -43,6 +43,9 @@
 - [x] Dockerfile (legacy builder, no BuildKit)
 - [x] `make verify` — test + check + lint + fmt
 - [x] All clippy warnings fixed
+- [x] Cross-platform release targets: `make release-linux`, `release-win`, `release-mac`
+- [x] Release binaries in `release/` — `audiosub`, `audiosub.exe`, `audiosub.mac`
+- [x] Windows cross-compilation via mingw-w64 (`x86_64-pc-windows-gnu`)
 
 ### Model
 - [x] Model download via `make model-download`

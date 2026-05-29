@@ -16,7 +16,7 @@ NC     := \033[0m
 # Resolve model path to absolute — Vosk needs absolute path
 AUDIOSUB_MODEL := $(CURDIR)/$(MODEL_DIR)/$(MODEL_NAME)
 
-.PHONY: all build test run lint clean docker docker-build docker-run docker-build fmt check verify ci-check report help model-download
+.PHONY: all build test run lint clean docker docker-build docker-run docker-build fmt check verify ci-check report help model-download release release-linux release-win release-mac
 
 all: help
 
@@ -32,7 +32,9 @@ help:
 	@echo "$(CYAN)Targets:$(NC)"
 	@echo "  $(GREEN)all$(NC)             Show this help"
 	@echo "  $(GREEN)build$(NC)           Compile the project"
-	@echo "  $(GREEN)release$(NC)         Compile in release mode"
+	@echo "  $(GREEN)release$(NC)         Compile in release mode (Linux)"
+	@echo "  $(GREEN)release-win$(NC)     Cross-compile for Windows (needs mingw-w64)"
+	@echo "  $(GREEN)release-mac$(NC)     Build for macOS (run on macOS)"
 	@echo "  $(GREEN)run [ARGS]$(NC)      Run with TUI (default, press q/Esc to quit)"
 	@echo "  $(GREEN)cli [ARGS]$(NC)      Run without TUI (plain CLI mode)"
 	@echo "  $(GREEN)model-download$(NC)  Download Vosk model (Russian)"
@@ -68,6 +70,25 @@ release:
 	cp target/release/audiosub release/audiosub
 	@echo "$(GREEN)✓ Release build complete — release/audiosub$(NC)"
 
+release-linux: release
+
+release-win:
+	@echo "$(CYAN)→ Building $(APP_NAME) for Windows...$(NC)"
+	@if ! which x86_64-w64-mingw32-gcc >/dev/null 2>&1; then \
+		echo "$(RED)✗ mingw-w64 not found. Install: sudo apt install mingw-w64$(NC)"; \
+		exit 1; \
+	fi
+	rustup target add x86_64-pc-windows-gnu 2>/dev/null || true
+	cargo build --release --target x86_64-pc-windows-gnu
+	mkdir -p release
+	cp target/x86_64-pc-windows-gnu/release/audiosub.exe release/audiosub.exe
+	@echo "$(GREEN)✓ Windows build complete — release/audiosub.exe$(NC)"
+
+release-mac:
+	@echo "$(RED)✗ macOS cross-compilation requires building natively on macOS.$(NC)"
+	@echo "$(YELLOW)  On macOS: cargo build --release && cp target/release/audiosub release/audiosub.mac$(NC)"
+	@exit 1
+
 model-download:
 	@echo "$(CYAN)→ Downloading $(MODEL_NAME)...$(NC)"
 	mkdir -p $(MODEL_DIR)
@@ -75,7 +96,7 @@ model-download:
 	unzip -qo /tmp/$(MODEL_NAME).zip -d $(MODEL_DIR) && \
 	rm /tmp/$(MODEL_NAME).zip && \
 	echo "$(GREEN)✓ Model downloaded to $(MODEL_PATH)$(NC)" && \
-	echo "$(YELLOW)  Edit .env to change AUDIOSUB_MODEL path$(NC)"
+	echo "$(YELLOW)  Edit audiosub.toml to change model path$(NC)"
 
 test:
 	@echo "$(CYAN)→ Running tests...$(NC)"
