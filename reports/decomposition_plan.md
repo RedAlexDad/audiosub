@@ -84,8 +84,8 @@
 | Задача | Описание | Статус |
 |--------|----------|--------|
 | 7.1 | **Makefile:** единая точка входа: `make build/test/run/lint/docker` | `[x]` |
-| 7.2 | **Dockerfile:** мультистейдж-сборка (builder + runtime на Ubuntu) | `[ ]` |
-| 7.3 | **Docker Compose:** `docker-compose.yml` с сервисами (app + dev) | `[ ]` |
+| 7.2 | **Dockerfile:** мультистейдж-сборка (builder + runtime на Debian) | `[-]` отложено |
+| 7.3 | **Docker Compose:** `docker-compose.yml` с сервисами (app + dev) | `[-]` отложено |
 | 7.4 | Пакет для Ubuntu (`.deb`) | `[ ]` |
 | 7.5 | AppImage / статическая сборка | `[ ]` |
 | 7.6 | Документация: README, примеры, скриншоты | `[ ]` |
@@ -120,7 +120,7 @@
 
 **Phase 4 — Дистрибуция**
 - `[x]` 7.1 — Makefile
-- `[ ]` 7.2, 7.3 — Docker + Compose
+- `[-]` 7.2, 7.3 — Docker + Compose (отложено)
 - `[ ]` 7.4–7.6 — упаковка, документация
 
 ---
