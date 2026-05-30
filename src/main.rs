@@ -48,12 +48,12 @@ fn create_engine(engine_name: &str, sample_rate: f32) -> Box<dyn AsrEngine> {
             #[cfg(feature = "vosk")]
             {
                 tracing::warn!("Unknown ASR engine '{engine_name}', falling back to vosk");
-                return Box::new(asr::vosk_backend::VoskEngine::new(sample_rate));
+                Box::new(asr::vosk_backend::VoskEngine::new(sample_rate))
             }
             #[cfg(all(feature = "whisper", not(feature = "vosk")))]
             {
                 tracing::warn!("Unknown ASR engine '{engine_name}', falling back to whisper");
-                return Box::new(asr::whisper_backend::WhisperEngine::new(sample_rate));
+                Box::new(asr::whisper_backend::WhisperEngine::new(sample_rate))
             }
             #[cfg(not(any(feature = "vosk", feature = "whisper")))]
             panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.");
@@ -220,8 +220,7 @@ fn main() -> Result<()> {
         let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
         let mut engine = create_engine(&cfg.asr.engine, engine_rate as f32);
 
-        let _stderr_guard =
-            redirect_stderr::StderrRedirect::new("/tmp/audiosub_stderr.log")?;
+        let _stderr_guard = redirect_stderr::StderrRedirect::new("/tmp/audiosub_stderr.log")?;
 
         engine.load_model(&model_path)?;
         tracing::info!(
@@ -240,7 +239,14 @@ fn main() -> Result<()> {
 
         let chunk_size = (cfg.audio.sample_rate as usize) / 10;
         let mut app = tui::TuiApp::new(engine_rate, max_duration);
-        app.run_with_capture(&mut capture, engine.as_mut(), &mut output, &mut buffer, chunk_size)
+        tui::capture::run_with_capture(
+            &mut app,
+            &mut capture,
+            engine.as_mut(),
+            &mut output,
+            &mut buffer,
+            chunk_size,
+        )
     }
 
     #[cfg(not(feature = "tui"))]
