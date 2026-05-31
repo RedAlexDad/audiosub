@@ -1,4 +1,5 @@
 pub mod bottom;
+pub mod helpers;
 pub mod logs;
 pub mod recognition;
 pub mod segments;

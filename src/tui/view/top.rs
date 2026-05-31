@@ -5,7 +5,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders};
 
 use crate::tui::app::TuiApp;
-use crate::tui::widgets::VuMeter;
+use crate::tui::view::helpers::VuMeter;
 
 pub fn render_top(app: &TuiApp, frame: &mut Frame, area: Rect) {
     let status = if app.paused {

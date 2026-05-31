@@ -17,7 +17,7 @@ use crate::audio::{AudioResampler, PulseCapture};
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 use crate::tui::app::TuiApp;
 use crate::tui::screen::Screen;
-use crate::tui::{input, view};
+use crate::tui::{event, view};
 
 // ── Messages ──
 
@@ -214,7 +214,7 @@ fn tui_loop(
     while app.running {
         terminal.draw(|f| view::render(&mut app, f))?;
 
-        input::handle_input(&mut app)?;
+        event::handle_input(&mut app)?;
 
         stop.store(!app.running, Ordering::Relaxed);
         paused.store(app.paused, Ordering::Relaxed);

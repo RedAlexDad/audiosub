@@ -10,12 +10,13 @@ pub trait SubtitleWriter: Send {
 
 pub mod buffer;
 pub mod output;
+pub mod split;
 pub mod srt;
 pub mod vtt;
 
 pub use buffer::SubtitleBuffer;
-pub use buffer::split_segment;
 pub use output::SubtitleOutput;
+pub use split::split_segment;
 
 pub fn create_writer(format: &str) -> Box<dyn SubtitleWriter> {
     match format {

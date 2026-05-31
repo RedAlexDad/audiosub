@@ -1,11 +1,11 @@
 # Оценка уровня программиста по кодовой базе audiosub
 
-**Дата:** 2026-06-01 (updated 2026-06-01 01:00 UTC)
+**Дата:** 2026-06-01 (updated 2026-06-01 01:12 UTC)
 **Контекст:** Код написан через AI (vibe-coding), но архитектура, ревью и интеграция сделаны человеком.
 
 ---
 
-## Итоговая оценка: Lead, 8-9/10
+## Итоговая оценка: Lead, 9/10
 
 ---
 
@@ -44,7 +44,7 @@
 
 ## 5. Тестирование (senior)
 
-- **74 теста**: 48 inline unit + 26 integration (4 файла в `tests/`)
+- **70 тестов**: 44 inline unit + 26 integration (4 файла в `tests/`)
 - Хорошее покрытие edge cases: empty, zero, boundary, overflow, pause, duplicate, clip
 - `assert!` с tolerance для float (`1e-6`)
 - Описания тестов на русском через `println!("Описание: ...")`
@@ -73,6 +73,10 @@
 | Дублирование `compute_rms`/`compute_peak` в worker.rs и app.rs | Низкая | ✅ исправлено |
 | `engine.finalize()` → `unwrap_or_default()` (тихая потеря ошибок) | Низкая | ✅ исправлено |
 | Legacy capture.rs дублирует worker.rs | Низкая | ✅ исправлено |
+| Дублирование модулей в `main.rs` vs `lib.rs` (дважды компилировались audio, asr, cli, …) | Высокая | ✅ исправлено |
+| `tui/input.rs` неправильное название (не только input) | Низкая | ✅ исправлено (→ `event.rs`) |
+| `tui/widgets.rs` не в той иерархии (не виджет, а хелпер view) | Низкая | ✅ исправлено (→ `view/helpers.rs`) |
+| `subtitle/buffer.rs` перегружен (325 строк, логика split не относится к буферу) | Средняя | ✅ исправлено (split → `subtitle/split.rs`) |
 
 ## 7. Вклад человека vs AI
 
