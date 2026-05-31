@@ -31,13 +31,6 @@ impl SubtitleOutput {
         Ok(())
     }
 
-    pub fn append_all(&mut self, segments: &[Segment]) -> Result<()> {
-        for seg in segments {
-            self.append(seg)?;
-        }
-        Ok(())
-    }
-
     pub fn close(&mut self) -> Result<()> {
         self.writer.write_footer(&mut self.file)?;
         self.file.flush()?;

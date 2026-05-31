@@ -1,5 +1,4 @@
 use anyhow::Result;
-use std::time::Instant;
 
 mod monitor;
 mod pulse;
@@ -11,8 +10,6 @@ pub use resampler::AudioResampler;
 
 pub struct AudioChunk {
     pub data: Vec<f32>,
-    pub timestamp: Instant,
-    pub sample_rate: u32,
 }
 
 pub trait AudioCapture: Send {

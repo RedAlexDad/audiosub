@@ -4,7 +4,6 @@ use anyhow::{Context, Result};
 use libpulse_binding::sample::{Format, Spec};
 use libpulse_binding::stream::Direction;
 use libpulse_simple_binding::Simple;
-use std::time::Instant;
 
 use super::{AudioCapture, AudioChunk, AudioResampler};
 
@@ -25,11 +24,6 @@ impl PulseCapture {
             resampler: None,
             pa: None,
         }
-    }
-
-    pub fn with_target_rate(mut self, target_rate: u32) -> Self {
-        self.target_rate = target_rate;
-        self
     }
 
     /// Read raw PCM f32 samples from PulseAudio WITHOUT resampling.
@@ -105,8 +99,6 @@ impl AudioCapture for PulseCapture {
             return Ok(None);
         }
 
-        let timestamp = Instant::now();
-
         let data: Vec<f32> = buf
             .chunks_exact(4)
             .map(|b| f32::from_ne_bytes([b[0], b[1], b[2], b[3]]))
@@ -118,11 +110,7 @@ impl AudioCapture for PulseCapture {
             return Ok(None);
         }
 
-        Ok(Some(AudioChunk {
-            data: resampled,
-            timestamp,
-            sample_rate: self.target_rate,
-        }))
+        Ok(Some(AudioChunk { data: resampled }))
     }
 
     fn stop(&mut self) -> Result<()> {

@@ -79,6 +79,7 @@ impl Config {
             mod tests {
                 use super::*;
 
+                #[allow(dead_code)]
                 #[test]
                 fn default_config_has_expected_values() {
                     println!(

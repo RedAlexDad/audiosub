@@ -9,12 +9,6 @@ impl Default for VttWriter {
     }
 }
 
-impl VttWriter {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl super::SubtitleWriter for VttWriter {
     fn write_header(&mut self, writer: &mut dyn std::io::Write) -> Result<()> {
         writeln!(writer, "WEBVTT\n")?;

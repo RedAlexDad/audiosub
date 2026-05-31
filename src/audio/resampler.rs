@@ -4,8 +4,6 @@ use rubato::{Fft, FixedSync, Resampler};
 
 pub struct AudioResampler {
     resampler: Fft<f32>,
-    input_rate: u32,
-    output_rate: u32,
     input_needed: usize,
     output_needed: usize,
     buffer: Vec<f32>,
@@ -29,8 +27,6 @@ impl AudioResampler {
 
         Ok(Self {
             resampler,
-            input_rate,
-            output_rate,
             input_needed,
             output_needed,
             buffer: Vec::new(),
@@ -83,18 +79,6 @@ impl AudioResampler {
 
         self.buffer.clear();
         Ok(out_scratch)
-    }
-
-    pub fn input_rate(&self) -> u32 {
-        self.input_rate
-    }
-
-    pub fn output_rate(&self) -> u32 {
-        self.output_rate
-    }
-
-    pub fn input_needed(&self) -> usize {
-        self.input_needed
     }
 
     pub fn reset(&mut self) {

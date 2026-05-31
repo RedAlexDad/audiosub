@@ -71,8 +71,9 @@ fn subtitle_output_writes_file_on_disk() {
     let _ = fs::remove_file(&path);
 
     let mut out = SubtitleOutput::create(&path, "srt").unwrap();
-    let segments = segments_for_test();
-    out.append_all(&segments).unwrap();
+    for seg in segments_for_test() {
+        out.append(&seg).unwrap();
+    }
     out.close().unwrap();
 
     let content = fs::read_to_string(&path).unwrap();
@@ -128,7 +129,9 @@ fn buffer_to_output_integration() {
     assert!(!ready.is_empty());
 
     let mut out = SubtitleOutput::create(&path, "srt").unwrap();
-    out.append_all(&ready).unwrap();
+    for seg in ready {
+        out.append(&seg).unwrap();
+    }
     out.close().unwrap();
 
     let content = fs::read_to_string(&path).unwrap();
