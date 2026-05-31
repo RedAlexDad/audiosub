@@ -26,5 +26,4 @@ services:
       "--output", "/tmp/subtitles.srt",
       "--no-tui"
     ]
-
-volumes: {}
+    restart: unless-stopped

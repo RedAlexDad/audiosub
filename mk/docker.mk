@@ -1,24 +1,61 @@
 # ──────────────────────────────────────────────────────────────
-# audiosub — Docker
+# audiosub — Docker (docker compose v2 only)
 # ──────────────────────────────────────────────────────────────
+
+ENGINE ?= vosk
+COMPOSE ?= docker compose
+DOCKER_IMAGE ?= audiosub
 
 lib/vosk/libvosk.so:
 	@mkdir -p lib/vosk
 	cp /home/redalexdad/.local/lib/libvosk.so lib/vosk/libvosk.so
 
-.PHONY: docker-build docker-run docker
+# ── Build ────────────────────────────────────────────────────
 
 docker-build: | lib/vosk/libvosk.so
-	@echo "$(CYAN)→ Building Docker image (ENGINE=$(ENGINE))...$(NC)"
+	@echo "$(CYAN)→ Build image (ENGINE=$(ENGINE))...$(NC)"
 	ENGINE=$(ENGINE) DOCKER_BUILDKIT=0 docker build \
 		--network host \
 		--build-arg ENGINE=$(ENGINE) \
 		-t $(DOCKER_IMAGE):$(ENGINE) .
-	@echo "$(GREEN)✓ Docker image built: $(DOCKER_IMAGE):$(ENGINE)$(NC)"
-	@echo "$(YELLOW)  ENGINE=$(ENGINE) — set ENGINE=whisper or ENGINE=both for other backends$(NC)"
+	@echo "$(GREEN)✓ Image: $(DOCKER_IMAGE):$(ENGINE)$(NC)"
 
-docker-run:
-	@echo "$(CYAN)→ Starting Docker Compose...$(NC)"
-	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) docker compose up
+docker-rebuild:
+	@echo "$(CYAN)→ Rebuild (no cache, ENGINE=$(ENGINE))...$(NC)"
+	ENGINE=$(ENGINE) DOCKER_BUILDKIT=0 docker build \
+		--network host --no-cache \
+		--build-arg ENGINE=$(ENGINE) \
+		-t $(DOCKER_IMAGE):$(ENGINE) .
+	@echo "$(GREEN)✓ Rebuilt: $(DOCKER_IMAGE):$(ENGINE)$(NC)"
 
-docker: docker-run
+# ── Lifecycle ────────────────────────────────────────────────
+
+docker-up:
+	@echo "$(CYAN)→ Up...$(NC)"
+	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) \
+		$(COMPOSE) up -d
+	@echo "$(GREEN)✓ Started$(NC)"
+
+docker-down:
+	@echo "$(CYAN)→ Down...$(NC)"
+	$(COMPOSE) down
+	@echo "$(GREEN)✓ Stopped$(NC)"
+
+docker-deploy: docker-build docker-up
+
+docker-restart: docker-down docker-up
+
+docker-clean:
+	@echo "$(CYAN)→ Remove image $(DOCKER_IMAGE):$(ENGINE)...$(NC)"
+	-$(COMPOSE) down --rmi all 2>/dev/null
+	-docker rmi $(DOCKER_IMAGE):$(ENGINE) 2>/dev/null
+	@echo "$(GREEN)✓ Cleaned$(NC)"
+
+# ── Logs ─────────────────────────────────────────────────────
+
+docker-logs:
+	$(COMPOSE) logs -f
+
+# ── Default ──────────────────────────────────────────────────
+
+docker: docker-deploy
