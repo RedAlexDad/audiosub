@@ -130,8 +130,14 @@ fn asr_thread(
 
         engine.feed_audio(&resampled)?;
 
-        let partial = engine.partial_text().unwrap_or_default();
-        let segments = engine.drain_segments().unwrap_or_default();
+        let partial = engine.partial_text().unwrap_or_else(|e| {
+            tracing::warn!("partial_text error: {e}");
+            String::new()
+        });
+        let segments = engine.drain_segments().unwrap_or_else(|e| {
+            tracing::warn!("drain_segments error: {e}");
+            vec![]
+        });
 
         total_resampled += resampled.len();
 
@@ -160,7 +166,10 @@ fn asr_thread(
         }
     }
 
-    let final_segments = engine.finalize().unwrap_or_default();
+    let final_segments = engine.finalize().unwrap_or_else(|e| {
+        tracing::warn!("finalize error: {e}");
+        vec![]
+    });
     for seg in &final_segments {
         for split in crate::subtitle::split_segment(seg.clone(), max_duration_ms) {
             buffer.push(split);

@@ -15,6 +15,8 @@
 - `compute_rms`/`compute_peak` promoted to `pub(crate)` and their tests moved to `src/tui/worker.rs`
 - Integration test `tests/subtitle_pipeline.rs` updated to use loops instead of removed `append_all()`
 - `#[allow(dead_code)]` added to a false-positive test function in `src/config.rs`
+- `#![allow(unsafe_code)]` replaced with scoped `#[allow(unsafe_code)]` on the single `unsafe impl Send` in `src/audio/pulse.rs`
+- `unwrap_or_default()` calls in `src/tui/worker.rs` replaced with `unwrap_or_else` + `tracing::warn!` to log errors before falling back to defaults
 
 ## Problems encountered
 
@@ -25,3 +27,5 @@
 
 - The false-positive was suppressed with `#[allow(dead_code)]` on the specific test function
 - All other dead code was deleted outright — no `#[allow]` annotations were used, ensuring zero dead code in the production build
+- `#![allow(unsafe_code)]` was scoped down to only the specific `unsafe impl` that actually needs it
+- `unwrap_or_default()` replaced with `unwrap_or_else` closures that log via `tracing::warn!` before returning the default value
