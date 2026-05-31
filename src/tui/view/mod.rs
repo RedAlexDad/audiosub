@@ -30,17 +30,12 @@ pub fn render(app: &mut TuiApp, frame: &mut Frame) {
 
     top::render_top(app, frame, top_area);
 
-    if app.screen == Screen::Segments {
-        segments::render_segments_list(app, frame, mid_bot);
-        return;
-    }
-
     let [mid, bot] = Layout::vertical([Constraint::Fill(1), Constraint::Length(5)]).areas(mid_bot);
 
     match app.screen {
         Screen::Recognition => recognition::render_recognition(app, frame, mid),
+        Screen::Segments => segments::render_history(app, frame, mid),
         Screen::Logs => logs::render_logs(app, frame, mid),
-        _ => unreachable!(),
     }
     bottom::render_bottom(app, frame, bot);
 }

@@ -12,7 +12,7 @@ pub fn render_recognition(app: &TuiApp, frame: &mut Frame, area: Rect) {
     }
 
     let ph = app.partial_height.min(area.height.saturating_sub(3));
-    let [partial_area, history_area] = Layout::vertical([Constraint::Length(ph), Constraint::Fill(1)]).areas(area);
+    let [partial_area, segments_area] = Layout::vertical([Constraint::Length(ph), Constraint::Fill(1)]).areas(area);
 
     let partial_block = Block::default()
         .borders(Borders::ALL)
@@ -41,34 +41,37 @@ pub fn render_recognition(app: &TuiApp, frame: &mut Frame, area: Rect) {
         partial_area,
     );
 
-    let history_block = Block::default()
+    let segments_block = Block::default()
         .borders(Borders::ALL)
-        .title(" History ")
-        .style(Style::new().fg(Color::DarkGray));
+        .title(format!(" Segments ({}) ", app.segments.len()))
+        .style(Style::new().fg(Color::Blue));
 
-    let history_lines: Vec<Line> = app
-        .partial_history
+    let inner_height = segments_area.height.saturating_sub(2) as usize;
+    let offset = app.scroll_offset.min(app.segments.len().saturating_sub(1));
+
+    let items: Vec<Line> = app
+        .segments
         .iter()
         .rev()
-        .take(area.height.saturating_sub(6) as usize)
-        .map(|s| Line::from(Span::styled(s, Style::new().fg(Color::Gray))))
+        .skip(offset)
+        .take(inner_height)
+        .enumerate()
+        .map(|(idx, seg)| {
+            let line_ts = format!("{}:{:02}", seg.start_ms / 60000, (seg.start_ms % 60000) / 1000);
+            Line::from(vec![
+                Span::styled(format!("{:>3} ", idx + offset + 1), Style::new().fg(Color::DarkGray)),
+                Span::styled(line_ts, Style::new().fg(Color::Blue)),
+                Span::raw("  "),
+                Span::styled(&seg.text, Style::new().fg(Color::White)),
+            ])
+        })
         .collect();
 
-    if history_lines.is_empty() {
-        frame.render_widget(
-            Paragraph::new(Line::from(Span::styled(
-                "(no partial results yet)",
-                Style::new().fg(Color::DarkGray),
-            )))
-            .block(history_block),
-            history_area,
-        );
-    } else {
-        frame.render_widget(
-            Paragraph::new(history_lines)
-                .block(history_block)
-                .wrap(Wrap { trim: true }),
-            history_area,
-        );
-    }
+    frame.render_widget(
+        Paragraph::new(items)
+            .block(segments_block)
+            .style(Style::new().fg(Color::White))
+            .wrap(Wrap { trim: false }),
+        segments_area,
+    );
 }
