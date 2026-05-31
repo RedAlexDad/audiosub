@@ -1,84 +1,144 @@
-# decomposition_plan.md
+# План декомпозиции: audiosub
 
-## 1. Done
+Автоматические субтитры в реальном времени для Ubuntu.
+Захват звука ОС → распознавание речи (Vosk / Whisper.cpp) → вывод субтитров.
 
-### Core Audio Capture
-- [x] PulseAudio monitor capture (`PulseCapture`) — system audio via ALSA monitor
-- [x] Audio resampler (`AudioResampler`, `rubato::Fft` + `FixedSync::Both`)
-- [x] `AudioCapture` trait for abstraction
-- [x] Monitor device detection
-- [x] CLI `--list-devices` flag
+---
 
-### ASR Backend (Vosk)
-- [x] Vosk backend (`AsrEngine` trait, feature `#[cfg(feature = "vosk")]`)
-- [x] Incremental recognition: `feed_audio`, `partial_text`, `drain_segments`
-- [x] Word-level timestamps from Vosk
+## 1. Инфраструктура проекта
 
-### ASR Backend (Whisper.cpp)
-- [x] Whisper backend (`whisper_backend.rs`, 190 строк, feature `#[cfg(feature = "whisper")]`)
-- [x] Интеграция с `whisper-rs`, реальные вызовы `state.full()`, `full_get_segment_text()`
-- [x] `make build-whisper` / `make run-whisper` / `make build-both`
+| Задача | Описание |
+|--------|----------|
+| 1.1 | [x] Инициализация Rust-проекта (Cargo.toml, workspace, lint/format настройки) |
+| 1.2 | [x] Настройка CI (GitHub Actions: сборка, clippy, test) |
+| 1.3 | [x] Конфигурация проекта (cli-аргументы + config файл + env) |
+| 1.4 | [x] Логирование (tracing) |
 
-### Subtitle Output
-- [x] `SubtitleWriter` — streaming SRT/VTT via `BufWriter`
-- [x] `SubtitleBuffer` — delay by `buffer_ms`, merge overlapping segments
-- [x] `split_segment()` — split long segments by `max_duration_ms`
-- [x] `SubtitleOutput` — shared writer with `Arc<Mutex<>>`
+## 2. Захват аудио системы (Audio Capture)
 
-### TUI (ratatui + crossterm)
-- [x] Full-history display (no cap)
-- [x] Scrolling: `↑`/`↓`, `PgUp`/`PgDown`, `Home`/`End`
-- [x] Pause mode (`p`) — freeze display for text copy
-- [x] Reset (`r`) — сброс engine, буфера, ресемплера
-- [x] Export: `s` → SRT, `S` (Shift+S) → TXT to `saved/`
-- [x] Save confirmation message (15 frames, auto-clear)
-- [x] VU meter — `VuMeter` widget с RMS→dB, цветовая индикация
-- [x] Log viewer — `Screen::Logs`, читает `/tmp/audiosub_stderr.log`
-- [x] Quit: `q`/`Esc`/`Ctrl+D`
-- [x] TUI is default mode; `--no-tui` for CLI
+**Суть:** Перехват системного аудиовыхода (то, что слышат колонки/наушники).
 
-### Multithreaded Architecture
-- [x] 3 потока: Capture → mpsc → ASR → mpsc → TUI
-- [x] `Arc<AtomicBool>` для stop/pause/reset
-- [x] Capture thread — `pa_simple_read()`, compute RMS/peak, send `AudioData`
-- [x] ASR thread — resample + `engine.feed_audio()` + `drain_segments()`
-- [x] TUI loop — keyboard input + rendering + receive `UiUpdate`
+| Задача | Описание |
+|--------|----------|
+| 2.1 | [x] PulseAudio `monitor` — выбран как primary API |
+| 2.2 | [x] Трейт `AudioCapture` с методом `fn read() -> AudioChunk` |
+| 2.3 | [x] **Реализация PulseAudio:** libpulse-binding — захват с `monitor` |
+| 2.4 | [-] **Реализация PipeWire:** pipewire-rs — отложено |
+| 2.5 | [-] **ALSA fallback:** отложено |
+| 2.6 | [x] **Перекодировка:** ресемплинг в 16kHz mono f32 (rubato::Fft) |
+| 2.7 | [x] **Выбор устройства:** `pactl list sources short` / `--list-devices` |
 
-### Configuration & CLI
-- [x] `audiosub.toml` — typed TOML sections `[audio]`, `[asr]`, `[subtitle]`
-- [x] `Config::load()` — CWD → `~/.config/audiosub/` → defaults
-- [x] CLI overrides TOML overrides defaults
-- [x] `resolve_model_path()` — relative → absolute (Vosk requirement)
-- [x] Only `AUDIOSUB_CONFIG` env var remains (config file path)
-- [x] `--max-duration`, `--no-tui`, `--list-devices`, `--duration` flags
+## 3. Движок распознавания речи (ASR Engine)
 
-### Build & CI
-- [x] GitHub Actions (`make ci-check`)
-- [x] Native build workflow (`make build`, `make run`, `make model-download`)
-- [x] Dockerfile (legacy builder, no BuildKit)
-- [x] `make verify` — test + check + lint + fmt
-- [x] All clippy warnings fixed
-- [x] Cross-platform release targets: `make release-linux`, `release-win`, `release-mac`
-- [x] Release binaries in `release/` — `audiosub`, `audiosub.exe`, `audiosub.mac`
-- [x] Windows cross-compilation via mingw-w64 (`x86_64-pc-windows-gnu`)
+**Суть:** Абстрактный слой над Vosk / Whisper.cpp.
 
-### Model
-- [x] Model download via `make model-download`
-- [x] `models/vosk-model-small-ru-0.22` downloaded and working
+| Задача | Описание |
+|--------|----------|
+| 3.1 | [x] **Абстракция:** трейт `AsrEngine` с методами `feed_audio`, `partial_text`, `drain_segments` |
+| 3.2 | [ ] **Загрузка моделей:** авто-загрузка по URL, кэширование в `~/.cache/audiosub/models` |
+| 3.3 | [x] **Backend: Vosk API:** `vosk-rs`, инкрементальное распознавание |
+| 3.4 | [x] **Backend: Whisper.cpp:** `whisper-rs`, `make build-whisper` / `make build-both` |
+| 3.5 | [ ] **Backend: Whisper.cpp (реальное время):** инкрементальный режим (слияние окон) |
+| 3.6 | [x] **Переключение движков:** `cargo build --features vosk,whisper` |
+| 3.7 | [ ] **Язык:** аргумент `--lang` / автодетект языка |
 
-### Reports & Docs
-- [x] Reports in `reports/YYYY-MM-DD/HH-MM-SS.md`
-- [x] AGENTS.md with commit workflow
+## 4. Генерация субтитров (Subtitle Pipeline)
 
-## 2. In Progress
+**Суть:** Сегменты распознанного текста → форматированные субтитры с таймкодами.
 
-- (none)
+| Задача | Описание |
+|--------|----------|
+| 4.1 | [x] **Сегментация:** сырые гипотезы → стабильные сегменты с временными метками |
+| 4.2 | [x] **Наложение таймкодов:** привязка текста к реальному времени системы |
+| 4.3 | [x] **Формат SRT:** вывод в стандартный `.srt` |
+| 4.4 | [x] **Формат VTT:** вывод в `.vtt` для веб |
+| 4.5 | [x] **Потоковый вывод:** запись в файл в реальном времени (append) |
+| 4.6 | [x] **Буферизация:** задержка для улучшения качества (показ с offset) |
 
-## 3. Next
+## 5. CLI / TUI (User Interface)
 
-### CLI
-- [ ] `--engine` флаг для выбора vosk/whisper при старте (сейчас только в TOML)
+**Суть:** Три режима — cli-only, интерактивный TUI, live overlay.
 
-### Documentation
-- [ ] README with setup and usage
-- [ ] ARCHITECTURE.md
+| Задача | Описание |
+|--------|----------|
+| 5.1 | [x] **CLI (clap):** `--model`, `--output`, `--device`, `--max-duration`, `--no-tui` |
+| 5.2 | [x] **TUI (ratatui):** режим по умолчанию, `--no-tui` для CLI |
+| 5.3 | [x] **VU meter:** индикатор уровня громкости (цветовая шкала) |
+| 5.4 | [x] **Экран распознавания:** live-лента распознанного текста |
+| 5.5 | [x] **Экран субтитров:** превью текущих сегментов + скролл |
+| 5.6 | [x] **Управление:** пауза (`p`), сброс (`r`), экспорт (`s`/`S`) |
+| 5.7 | [x] **Логи:** встроенный просмотр stderr в TUI (`Tab`) |
+| 5.8 | [ ] **Режим `--overlay`:** оверлейное окно (GTK/wayland) — stretch goal |
+
+## 6. Обработка ошибок и надежность
+
+| Задача | Описание |
+|--------|----------|
+| 6.1 | [ ] Graceful degradation при потере аудиопотока |
+| 6.2 | [ ] Перезапуск ASR при падении процесса whisper.cpp |
+| 6.3 | [ ] Восстановление после сбоев (recovery) |
+| 6.4 | [x] Логирование всех этапов (tracing + файл `/tmp/audiosub_stderr.log`) |
+
+## 7. Сборка и дистрибуция
+
+| Задача | Описание |
+|--------|----------|
+| 7.1 | [x] **Makefile:** `make build/test/run/verify/lint`, `make build-both/build-whisper` |
+| 7.2 | [-] **Dockerfile:** мультистейдж-сборка (отложено) |
+| 7.3 | [-] **Docker Compose:** отложено |
+| 7.4 | [ ] Пакет для Ubuntu (`.deb`) |
+| 7.5 | [ ] AppImage / статическая сборка |
+| 7.6 | [ ] Документация: README, примеры, скриншоты |
+
+---
+
+## Приоритетная карта (MVP)
+
+**Phase 1 — Ядро**
+- [x] 1.1, 1.2, 1.3, 1.4 — каркас проекта
+- [x] 2.1, 2.2, 2.3 — захват PulseAudio monitor
+- [x] 2.6 — ресемплинг
+- [x] 3.1, 3.3 — Vosk backend
+- [x] 4.1, 4.2, 4.3, 4.5 — базовый SRT вывод
+- [x] 5.1, 5.2 — Basic CLI + TUI
+
+**Phase 2 — Whisper.cpp**
+- [x] 3.4 — Whisper.cpp backend
+- [x] 3.6 — переключение движков (`cargo build --features vosk,whisper`)
+
+**Phase 3 — Полировка**
+- [x] 4.4 — VTT
+- [x] 5.3–5.7 — расширенный TUI (VU meter, pause, reset, log viewer)
+- [x] 2.7 — выбор устройства
+- [x] 4.6 — буферизация
+- [x] 6.4 — логирование
+- [ ] 6.1–6.3 — надежность
+
+**Phase 3b — Многопоточность**
+- [x] 3 потока: Capture → ASR → TUI (mpsc channels)
+- [x] `Arc<AtomicBool>` — stop/pause/reset
+- [x] ASR thread — resample + engine + buffer + output
+
+**Phase 4 — Дистрибуция**
+- [x] 7.1 — Makefile
+- [-] 7.2, 7.3 — Docker + Compose (отложено)
+- [ ] 7.4–7.6 — упаковка, документация
+
+---
+
+## Стек технологий (предварительно)
+
+| Компонент | Библиотека |
+|-----------|------------|
+| CLI аргументы | `clap` + `clap_complete` |
+| TUI | `ratatui` + `crossterm` |
+| Аудио захват | `libpulse-binding` |
+| Ресемплинг | `rubato` (FftFixed + FixedSync) |
+| ASR Vosk | `vosk-rs` + Cargo feature |
+| ASR Whisper | `whisper-rs` + Cargo feature |
+| Асинхронность | `tokio` |
+| Конфиг | `serde` + `toml` |
+| Логи | `tracing` + `tracing-subscriber` |
+| Загрузка моделей | `reqwest` |
+| Сборка | `make` + `Docker` + `docker-compose` |
+| CI/CD | `GitHub Actions` |
