@@ -33,8 +33,8 @@ docker-rebuild:
 docker-up:
 	@echo "$(CYAN)→ Up...$(NC)"
 	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) \
-		$(COMPOSE) up -d
-	@echo "$(GREEN)✓ Started$(NC)"
+		$(COMPOSE) up
+	@echo "$(GREEN)✓ Stopped$(NC)"
 
 docker-down:
 	@echo "$(CYAN)→ Down...$(NC)"
