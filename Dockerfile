@@ -65,6 +65,7 @@ ARG ENGINE
 
 RUN apt-get update && apt-get install -y \
     libpulse0 \
+    pulseaudio-utils \
     ca-certificates \
     curl \
     unzip \

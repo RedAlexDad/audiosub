@@ -16,7 +16,6 @@ services:
       - /run/user/${USER_ID:-1000}/pulse:/run/user/${USER_ID:-1000}/pulse
       - ~/.config/pulse/cookie:/tmp/pulse-cookie:ro
       - ./models:/app/models:ro
-      - ./output:/output
     user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
     group_add:
       - audio
@@ -24,7 +23,8 @@ services:
       - /dev/snd:/dev/snd
     command: [
       "--model", "/app/models/vosk-model-small-ru-0.22",
-      "--output", "/output/subtitles.srt"
+      "--output", "/tmp/subtitles.srt",
+      "--no-tui"
     ]
 
 volumes: {}
