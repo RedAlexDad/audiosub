@@ -20,6 +20,9 @@ fn main() -> Result<()> {
 
     let cfg = audiosub::config::Config::load(args.config.as_ref())?;
 
+    let engine_name = args.engine.as_deref().unwrap_or(&cfg.asr.engine);
+    tracing::info!("ASR engine: {engine_name}");
+
     tracing::info!("audiosub v{} starting", env!("CARGO_PKG_VERSION"));
     tracing::debug!("Config: {:?}", cfg);
 
@@ -48,7 +51,7 @@ fn main() -> Result<()> {
     let max_duration = args.max_duration.unwrap_or(cfg.subtitle.max_duration_ms);
 
     if args.no_tui {
-        return session::run_session(&args, &cfg, &device, cfg.audio.sample_rate, duration);
+        return session::run_session(&args, &cfg, &device, cfg.audio.sample_rate, duration, engine_name);
     }
 
     #[cfg(feature = "tui")]
@@ -57,11 +60,11 @@ fn main() -> Result<()> {
         capture.start()?;
 
         let model_path = session::model::resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-        let mut engine = session::create_engine(&cfg.asr.engine, 16000.0);
+        let mut engine = session::create_engine(engine_name, 16000.0);
         engine.load_model(&model_path)?;
         tracing::info!(
             "ASR engine '{engine}' loaded model from: {model_path}",
-            engine = cfg.asr.engine
+            engine = engine_name
         );
 
         let output_path = args

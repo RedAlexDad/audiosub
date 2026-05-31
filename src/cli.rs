@@ -34,6 +34,9 @@ pub struct Cli {
     #[arg(long, short = 'd', help = "Recording duration in seconds (default: unlimited)")]
     pub duration: Option<u64>,
 
+    #[arg(long, env = "AUDIOSUB_ENGINE", help = "ASR engine: vosk | whisper (default from config)")]
+    pub engine: Option<String>,
+
     #[arg(long, short = 'v', action = clap::ArgAction::Count, help = "Verbosity level")]
     pub verbose: u8,
 }

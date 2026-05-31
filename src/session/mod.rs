@@ -13,7 +13,7 @@ use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 
 use self::model::resolve_model_path;
 
-pub fn run_session(args: &Cli, cfg: &Config, device: &str, source_rate: u32, duration: Duration) -> Result<()> {
+pub fn run_session(args: &Cli, cfg: &Config, device: &str, source_rate: u32, duration: Duration, engine_name: &str) -> Result<()> {
     let mut capture = PulseCapture::new(device, source_rate);
     capture.start()?;
 
@@ -22,11 +22,11 @@ pub fn run_session(args: &Cli, cfg: &Config, device: &str, source_rate: u32, dur
     tracing::info!("Capturing from: {device} ({source_rate} → {engine_rate} Hz)");
 
     let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-    let mut engine = create_engine(&cfg.asr.engine, engine_rate as f32);
+    let mut engine = create_engine(engine_name, engine_rate as f32);
     engine.load_model(&model_path)?;
     tracing::info!(
         "ASR engine '{engine}' loaded model from: {model_path}",
-        engine = cfg.asr.engine
+        engine = engine_name
     );
 
     let output_path = args
