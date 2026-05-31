@@ -84,8 +84,8 @@
 | Задача | Описание |
 |--------|----------|
 | 7.1 | [x] **Makefile:** `make build/test/run/verify/lint`, `make build-both/build-whisper` |
-| 7.2 | [-] **Dockerfile:** мультистейдж-сборка (отложено) |
-| 7.3 | [-] **Docker Compose:** отложено |
+| 7.2 | [x] **Dockerfile:** мультистейдж-сборка, ENGINE=vosk|whisper|both |
+| 7.3 | [x] **Docker Compose:** PulseAudio cookie + модель + /dev/snd |
 | 7.4 | [ ] Пакет для Ubuntu (`.deb`) |
 | 7.5 | [ ] AppImage / статическая сборка |
 | 7.6 | [ ] Документация: README, примеры, скриншоты |
@@ -121,7 +121,7 @@
 
 **Phase 4 — Дистрибуция**
 - [x] 7.1 — Makefile
-- [-] 7.2, 7.3 — Docker + Compose (отложено)
+- [x] 7.2, 7.3 — Docker + Compose
 - [ ] 7.4–7.6 — упаковка, документация
 
 ---
