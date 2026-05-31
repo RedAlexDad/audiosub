@@ -69,35 +69,41 @@ mod tests {
 
     #[test]
     fn rms_to_db_silence() {
+        println!("Описание: тишина (0.0, 1e-10) → -60 dB (floor)");
         assert_eq!(rms_to_db(0.0), -60.0);
         assert_eq!(rms_to_db(1e-10), -60.0);
     }
 
     #[test]
     fn rms_to_db_full_scale() {
+        println!("Описание: полная шкала (1.0) → 0 dB");
         assert!((rms_to_db(1.0) - 0.0).abs() < 1e-6);
     }
 
     #[test]
     fn rms_to_db_half_scale() {
+        println!("Описание: половина амплитуды (0.5) → ≈ -6.02 dB");
         let db = rms_to_db(0.5);
         assert!((db - (-6.0206)).abs() < 0.01);
     }
 
     #[test]
     fn rms_to_db_clamps() {
+        println!("Описание: значения > 1.0 клиппятся к 0 dB");
         assert_eq!(rms_to_db(1.0), 0.0);
         assert_eq!(rms_to_db(2.0), 0.0);
     }
 
     #[test]
     fn db_color_loud_is_red() {
+        println!("Описание: ≥ -10 dB → Color::Red");
         assert_eq!(db_color(-5.0), Color::Red);
         assert_eq!(db_color(-9.9), Color::Red);
     }
 
     #[test]
     fn db_color_medium_is_yellow() {
+        println!("Описание: от -25 до -10 dB → Color::Yellow");
         assert_eq!(db_color(-10.0), Color::Yellow);
         assert_eq!(db_color(-15.0), Color::Yellow);
         assert_eq!(db_color(-24.9), Color::Yellow);
@@ -105,6 +111,7 @@ mod tests {
 
     #[test]
     fn db_color_quiet_is_green() {
+        println!("Описание: от -40 до -25 dB → Color::Green");
         assert_eq!(db_color(-25.0), Color::Green);
         assert_eq!(db_color(-30.0), Color::Green);
         assert_eq!(db_color(-39.9), Color::Green);
@@ -112,6 +119,7 @@ mod tests {
 
     #[test]
     fn db_color_silent_is_dark_gray() {
+        println!("Описание: ≤ -40 dB → Color::DarkGray");
         assert_eq!(db_color(-40.0), Color::DarkGray);
         assert_eq!(db_color(-45.0), Color::DarkGray);
         assert_eq!(db_color(-60.0), Color::DarkGray);

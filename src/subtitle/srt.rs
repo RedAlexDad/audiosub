@@ -51,26 +51,31 @@ mod tests {
 
     #[test]
     fn ms_to_srt_zero() {
+        println!("Описание: 0 мс → 00:00:00,000");
         assert_eq!(ms_to_srt(0), "00:00:00,000");
     }
 
     #[test]
     fn ms_to_srt_millis() {
+        println!("Описание: 1234 мс → 00:00:01,234");
         assert_eq!(ms_to_srt(1234), "00:00:01,234");
     }
 
     #[test]
     fn ms_to_srt_minutes() {
+        println!("Описание: 65 000 мс → 00:01:05,000");
         assert_eq!(ms_to_srt(65_000), "00:01:05,000");
     }
 
     #[test]
     fn ms_to_srt_hours() {
+        println!("Описание: 3 721 500 мс → 01:02:01,500");
         assert_eq!(ms_to_srt(3_721_500), "01:02:01,500");
     }
 
     #[test]
     fn ms_to_srt_large() {
+        println!("Описание: 90 000 000 мс (25 часов) → 25:00:00,000");
         assert_eq!(ms_to_srt(90_000_000), "25:00:00,000");
     }
 }

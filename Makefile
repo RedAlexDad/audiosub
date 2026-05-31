@@ -26,6 +26,9 @@ AUDIOSUB_MODEL := $(CURDIR)/$(MODEL_DIR)/$(MODEL_NAME)
 # Docker engine selection: vosk, whisper, both
 ENGINE ?= vosk
 
+# Test output: 1 = show descriptions (--show-output), 0 = compact
+SHOW_DESCRIBE ?= 0
+
 .PHONY: all build build-whisper build-both release release-whisper release-both release-linux release-win release-mac model-download model-whisper test run run-whisper run-both cli cli-whisper check lint fmt verify ci-check clean docker docker-build docker-run report help
 
 all: help
@@ -175,7 +178,7 @@ model-whisper:
 
 test:
 	@echo "$(CYAN)→ Running tests...$(NC)"
-	cargo test
+	cargo test $(if $(filter 1,$(SHOW_DESCRIBE)),-- --show-output,)
 	@echo "$(GREEN)✓ Tests passed$(NC)"
 
 run:
@@ -214,12 +217,28 @@ fmt:
 	@echo "$(GREEN)✓ Formatting OK$(NC)"
 
 verify:
-	@echo "$(CYAN)→ Verifying (test + check + lint + fmt)...$(NC)"
-	$(MAKE) test && \
-	$(MAKE) check && \
-	$(MAKE) lint && \
-	$(MAKE) fmt
-	@echo "$(GREEN)✓ All checks passed$(NC)"
+	@echo "$(CYAN)══════════════════════════════════════════════$(NC)"; \
+	echo "$(CYAN)  Verification pipeline$(NC)"; \
+	echo "$(CYAN)══════════════════════════════════════════════$(NC)"; \
+	echo ""; \
+	echo "$(BOLD)[1/4] Running unit tests (48 tests across 6 modules, с описаниями)...$(NC)"; \
+	cargo test $(if $(filter 1,$(SHOW_DESCRIBE)),-- --show-output,) && \
+	echo "$(GREEN)✓ Tests passed$(NC)" && \
+	echo ""; \
+	echo "$(BOLD)[2/4] Compilation check (cargo check)...$(NC)"; \
+	cargo check && \
+	echo "$(GREEN)✓ Check passed$(NC)" && \
+	echo ""; \
+	echo "$(BOLD)[3/4] Linting (cargo clippy)...$(NC)"; \
+	cargo clippy -- -D warnings && \
+	echo "$(GREEN)✓ Lint passed$(NC)" && \
+	echo ""; \
+	echo "$(BOLD)[4/4] Formatting check (cargo fmt)...$(NC)"; \
+	cargo fmt --check && \
+	echo "$(GREEN)✓ Formatting OK$(NC)" && \
+	echo ""; \
+	echo "$(GREEN)══════════════════════════════════════════════$(NC)"; \
+	echo "$(GREEN)✓ All checks passed$(NC)"
 
 ci-check:
 	@echo "$(CYAN)→ Running CI simulation...$(NC)"

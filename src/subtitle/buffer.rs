@@ -116,6 +116,7 @@ mod tests {
 
     #[test]
     fn split_segment_short_enough() {
+        println!("Описание: сегмент короче max_duration не дробится, возвращается как есть");
         let seg = Segment {
             start_ms: 1000,
             end_ms: 3000,
@@ -130,6 +131,7 @@ mod tests {
 
     #[test]
     fn split_segment_zero_max_duration() {
+        println!("Описание: при max_duration=0 сегмент не дробится (защита от деления на ноль)");
         let seg = Segment {
             start_ms: 0,
             end_ms: 5000,
@@ -141,6 +143,7 @@ mod tests {
 
     #[test]
     fn split_segment_needs_splitting() {
+        println!("Описание: сегмент длиннее max_duration дробится по словам, временные границы сохраняются");
         let seg = Segment {
             start_ms: 0,
             end_ms: 10000,
@@ -158,6 +161,7 @@ mod tests {
 
     #[test]
     fn split_segment_exact_boundary() {
+        println!("Описание: сегмент ровно по границе max_duration не дробится");
         let seg = Segment {
             start_ms: 0,
             end_ms: 5000,
@@ -169,6 +173,7 @@ mod tests {
 
     #[test]
     fn buffer_push_splits_long_segments() {
+        println!("Описание: push() автоматически дробит длинные сегменты через split_segment");
         let mut buf = SubtitleBuffer::new(2000, 3000);
         buf.push(Segment {
             start_ms: 0,
@@ -180,6 +185,7 @@ mod tests {
 
     #[test]
     fn buffer_flush_respects_buffer_ms() {
+        println!("Описание: flush() сдвигает cutoff на buffer_ms назад, неготовые сегменты не выгружаются");
         let mut buf = SubtitleBuffer::new(2000, 10000);
         buf.push(Segment {
             start_ms: 1000,
@@ -204,6 +210,7 @@ mod tests {
 
     #[test]
     fn buffer_flush_merges_overlapping_segments() {
+        println!("Описание: перекрывающиеся по времени сегменты сливаются в один при flush()");
         let mut buf = SubtitleBuffer::new(2000, 10000);
         buf.push(Segment {
             start_ms: 1000,
@@ -226,6 +233,7 @@ mod tests {
 
     #[test]
     fn buffer_flush_keeps_non_ready_segments() {
+        println!("Описание: сегменты, не достигшие cutoff, остаются в буфере после flush()");
         let mut buf = SubtitleBuffer::new(2000, 10000);
         buf.push(Segment {
             start_ms: 1000,
@@ -251,6 +259,7 @@ mod tests {
 
     #[test]
     fn overlap_ms_detects_overlap() {
+        println!("Описание: overlap_ms() возвращает true для пересекающихся по времени сегментов (симметрично)");
         let a = Segment {
             start_ms: 1000,
             end_ms: 3000,
@@ -267,6 +276,7 @@ mod tests {
 
     #[test]
     fn overlap_ms_no_overlap() {
+        println!("Описание: overlap_ms() возвращает false для непересекающихся сегментов");
         let a = Segment {
             start_ms: 1000,
             end_ms: 2000,
@@ -283,6 +293,7 @@ mod tests {
 
     #[test]
     fn merge_into_extends_bounds_and_text() {
+        println!("Описание: merge_into() расширяет временные границы и склеивает тексты через пробел");
         let mut a = Segment {
             start_ms: 2000,
             end_ms: 3000,
@@ -301,6 +312,7 @@ mod tests {
 
     #[test]
     fn drain_empties_buffer() {
+        println!("Описание: после drain() буфер становится пустым");
         let mut buf = SubtitleBuffer::new(2000, 10000);
         buf.push(Segment {
             start_ms: 0,

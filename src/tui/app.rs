@@ -141,17 +141,20 @@ mod tests {
 
     #[test]
     fn compute_rms_empty() {
+        println!("Описание: пустой массив → RMS = 0.0");
         assert_eq!(compute_rms(&[]), 0.0);
     }
 
     #[test]
     fn compute_rms_silence() {
+        println!("Описание: все нули → RMS = 0.0");
         let data = [0.0_f32; 100];
         assert_eq!(compute_rms(&data), 0.0);
     }
 
     #[test]
     fn compute_rms_max_amplitude() {
+        println!("Описание: все 1.0 → RMS = 1.0");
         let data = [1.0_f32; 100];
         let rms = compute_rms(&data);
         assert!((rms - 1.0).abs() < 1e-6);
@@ -159,6 +162,7 @@ mod tests {
 
     #[test]
     fn compute_rms_half_amplitude() {
+        println!("Описание: все 0.5 → RMS = 0.5");
         let data = [0.5_f32; 100];
         let rms = compute_rms(&data);
         assert!((rms - 0.5).abs() < 1e-6);
@@ -166,27 +170,32 @@ mod tests {
 
     #[test]
     fn compute_peak_empty() {
+        println!("Описание: пустой массив → peak = 0.0");
         assert_eq!(compute_peak(&[]), 0.0);
     }
 
     #[test]
     fn compute_peak_silence() {
+        println!("Описание: все нули → peak = 0.0");
         assert_eq!(compute_peak(&[0.0; 50]), 0.0);
     }
 
     #[test]
     fn compute_peak_max() {
+        println!("Описание: максимальный по модулю sample = 1.0 → peak = 1.0");
         assert_eq!(compute_peak(&[0.0, 0.8, -1.0, 0.5]), 1.0);
     }
 
     #[test]
     fn compute_peak_never_exceeds_one() {
+        println!("Описание: значения >1.0 клиппятся к 1.0");
         let data = vec![2.0, -3.0, 1.5];
         assert_eq!(compute_peak(&data), 1.0);
     }
 
     #[test]
     fn tui_app_new_state() {
+        println!("Описание: TuiApp::new() создаёт состояние running, не reset, экран Recognition, пустые поля");
         let app = TuiApp::new(16000, 10000);
         assert!(app.is_running());
         assert!(!app.reset_requested());
@@ -197,6 +206,7 @@ mod tests {
 
     #[test]
     fn tui_app_stop() {
+        println!("Описание: stop() переводит is_running в false");
         let mut app = TuiApp::new(16000, 10000);
         app.stop();
         assert!(!app.is_running());
@@ -204,6 +214,7 @@ mod tests {
 
     #[test]
     fn tui_app_update_audio() {
+        println!("Описание: update_audio(16000) добавляет сэмплы и обновляет elapsed = 1 сек");
         let mut app = TuiApp::new(16000, 10000);
         app.update_audio(16000);
         assert_eq!(app.total_samples, 16000);
@@ -212,6 +223,7 @@ mod tests {
 
     #[test]
     fn tui_app_update_audio_respects_paused() {
+        println!("Описание: при paused=true сэмплы не учитываются, elapsed не растёт");
         let mut app = TuiApp::new(16000, 10000);
         app.paused = true;
         app.update_audio(16000);
@@ -220,6 +232,7 @@ mod tests {
 
     #[test]
     fn tui_app_set_partial() {
+        println!("Описание: set_partial() обновляет partial и добавляет запись в partial_history");
         let mut app = TuiApp::new(16000, 10000);
         app.set_partial("hello world");
         assert_eq!(app.partial, "hello world");
@@ -228,6 +241,7 @@ mod tests {
 
     #[test]
     fn tui_app_set_partial_skips_duplicates() {
+        println!("Описание: повторный set_partial() с тем же текстом не дублирует историю");
         let mut app = TuiApp::new(16000, 10000);
         app.set_partial("hello");
         app.set_partial("hello");
@@ -236,6 +250,7 @@ mod tests {
 
     #[test]
     fn tui_app_set_partial_respects_paused() {
+        println!("Описание: при paused=true partial не обновляется");
         let mut app = TuiApp::new(16000, 10000);
         app.paused = true;
         app.set_partial("hello");
@@ -244,6 +259,7 @@ mod tests {
 
     #[test]
     fn tui_app_add_segments() {
+        println!("Описание: add_segments() добавляет сегменты и увеличивает счётчик");
         let mut app = TuiApp::new(16000, 10000);
         let segs = vec![
             Segment {
@@ -264,6 +280,7 @@ mod tests {
 
     #[test]
     fn tui_app_add_segments_respects_paused() {
+        println!("Описание: при paused=true сегменты не добавляются");
         let mut app = TuiApp::new(16000, 10000);
         app.paused = true;
         app.add_segments(vec![Segment {
@@ -276,6 +293,7 @@ mod tests {
 
     #[test]
     fn tui_app_do_reset() {
+        println!("Описание: do_reset() очищает сегменты, историю, partial, счётчики и audio_level");
         let mut app = TuiApp::new(16000, 10000);
         app.set_partial("hello");
         app.add_segments(vec![Segment {
@@ -296,6 +314,7 @@ mod tests {
 
     #[test]
     fn tui_app_auto_scroll_triggers_on_add() {
+        println!("Описание: при auto_scroll=true добавление сегмента сбрасывает scroll_offset в 0");
         let mut app = TuiApp::new(16000, 10000);
         app.scroll_offset = 5;
         app.auto_scroll = true;

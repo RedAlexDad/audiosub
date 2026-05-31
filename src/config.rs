@@ -81,6 +81,9 @@ impl Config {
 
                 #[test]
                 fn default_config_has_expected_values() {
+                    println!(
+                        "Описание: значения Config::default() совпадают с ожидаемыми (device, sample_rate, channels, engine, lang, format, buffer_ms, max_duration_ms)"
+                    );
                     let cfg = Config::default();
                     assert_eq!(cfg.audio.device, "default");
                     assert_eq!(cfg.audio.sample_rate, 16000);
