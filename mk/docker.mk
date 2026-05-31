@@ -51,6 +51,16 @@ docker-clean:
 	-docker rmi $(DOCKER_IMAGE):$(ENGINE) 2>/dev/null
 	@echo "$(GREEN)✓ Cleaned$(NC)"
 
+# ── TUI mode ────────────────────────────────────────────────
+
+docker-tui: docker-build
+	@echo "$(CYAN)→ Starting TUI...$(NC)"
+	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) \
+		$(COMPOSE) run --rm --service-ports \
+		audiosub \
+		--model /app/models/vosk-model-small-ru-0.22 \
+		--output /tmp/subtitles.srt
+
 # ── Logs ─────────────────────────────────────────────────────
 
 docker-logs:
