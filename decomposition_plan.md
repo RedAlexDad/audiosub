@@ -126,19 +126,22 @@
 
 ---
 
-## Стек технологий (предварительно)
+## Стек технологий
 
 | Компонент | Библиотека |
 |-----------|------------|
-| CLI аргументы | `clap` + `clap_complete` |
-| TUI | `ratatui` + `crossterm` |
-| Аудио захват | `libpulse-binding` |
+| CLI аргументы | `clap` (derive + env) |
+| TUI | `ratatui` + `crossterm` (feature `tui`) |
+| Аудио захват | `libpulse-binding` + `libpulse-simple-binding` |
 | Ресемплинг | `rubato` (FftFixed + FixedSync) |
-| ASR Vosk | `vosk-rs` + Cargo feature |
-| ASR Whisper | `whisper-rs` + Cargo feature |
-| Асинхронность | `tokio` |
-| Конфиг | `serde` + `toml` |
-| Логи | `tracing` + `tracing-subscriber` |
-| Загрузка моделей | `reqwest` |
-| Сборка | `make` + `Docker` + `docker-compose` |
-| CI/CD | `GitHub Actions` |
+| ASR Vosk | `vosk-rs` (feature `vosk`) |
+| ASR Whisper | `whisper-rs` (feature `whisper`) |
+| Асинхронность | `tokio` (full) |
+| Конфиг | `serde` + `toml` + `directories` |
+| Таймкоды | `chrono` |
+| Логи | `tracing` + `tracing-subscriber` + `tracing-appender` |
+| Ошибки | `anyhow` + `thiserror` |
+| Загрузка моделей | `reqwest` (опционально) |
+| Утилиты | `duct` (pactl), `libc` |
+| Сборка | `make` (Makefile) |
+| CI/CD | `GitHub Actions` (`.github/workflows/`) |
