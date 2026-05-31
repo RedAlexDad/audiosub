@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use tracing::debug;
 
 use crate::asr::{AsrEngine, Segment};
@@ -38,7 +38,7 @@ impl WhisperEngine {
     }
 
     fn run_inference(&mut self) -> Result<()> {
-        let ctx = self.ctx.as_ref().unwrap();
+        let ctx = self.ctx.as_ref().context("Whisper context not initialized")?;
         let mut state = ctx.create_state()?;
 
         let mut params = whisper_rs::FullParams::new(whisper_rs::SamplingStrategy::Greedy { best_of: 1 });

@@ -36,11 +36,6 @@ pub fn render_history(app: &TuiApp, frame: &mut Frame, area: Rect) {
             area,
         );
     } else {
-        frame.render_widget(
-            Paragraph::new(items)
-                .block(block)
-                .wrap(Wrap { trim: true }),
-            area,
-        );
+        frame.render_widget(Paragraph::new(items).block(block).wrap(Wrap { trim: true }), area);
     }
 }

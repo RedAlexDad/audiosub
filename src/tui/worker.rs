@@ -1,7 +1,7 @@
 use std::io;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
-use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -15,9 +15,9 @@ use ratatui::prelude::CrosstermBackend;
 use crate::asr::{AsrEngine, Segment};
 use crate::audio::{AudioResampler, PulseCapture};
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
-use crate::tui::{input, view};
 use crate::tui::app::TuiApp;
 use crate::tui::screen::Screen;
+use crate::tui::{input, view};
 
 // ── Messages ──
 
@@ -222,8 +222,7 @@ fn tui_loop(
             app.audio_level = Some((update.rms, update.peak));
             if update.sample_count > 0 {
                 app.total_samples += update.sample_count;
-                app.elapsed =
-                    Duration::from_secs_f64(app.total_samples as f64 / app.engine_rate as f64);
+                app.elapsed = Duration::from_secs_f64(app.total_samples as f64 / app.engine_rate as f64);
             }
         }
 
@@ -281,8 +280,7 @@ pub fn run_tui(
     let stop_asr = stop.clone();
     let paused_asr = paused.clone();
     let reset_asr = reset.clone();
-    let mut resampler = AudioResampler::new(source_rate, target_rate)
-        .expect("Failed to create resampler for ASR thread");
+    let mut resampler = AudioResampler::new(source_rate, target_rate)?;
 
     let asr_handle = thread::spawn(move || {
         if let Err(e) = asr_thread(

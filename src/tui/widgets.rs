@@ -62,3 +62,58 @@ impl Widget for VuMeter {
         .render(area, buf);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rms_to_db_silence() {
+        assert_eq!(rms_to_db(0.0), -60.0);
+        assert_eq!(rms_to_db(1e-10), -60.0);
+    }
+
+    #[test]
+    fn rms_to_db_full_scale() {
+        assert!((rms_to_db(1.0) - 0.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn rms_to_db_half_scale() {
+        let db = rms_to_db(0.5);
+        assert!((db - (-6.0206)).abs() < 0.01);
+    }
+
+    #[test]
+    fn rms_to_db_clamps() {
+        assert_eq!(rms_to_db(1.0), 0.0);
+        assert_eq!(rms_to_db(2.0), 0.0);
+    }
+
+    #[test]
+    fn db_color_loud_is_red() {
+        assert_eq!(db_color(-5.0), Color::Red);
+        assert_eq!(db_color(-9.9), Color::Red);
+    }
+
+    #[test]
+    fn db_color_medium_is_yellow() {
+        assert_eq!(db_color(-10.0), Color::Yellow);
+        assert_eq!(db_color(-15.0), Color::Yellow);
+        assert_eq!(db_color(-24.9), Color::Yellow);
+    }
+
+    #[test]
+    fn db_color_quiet_is_green() {
+        assert_eq!(db_color(-25.0), Color::Green);
+        assert_eq!(db_color(-30.0), Color::Green);
+        assert_eq!(db_color(-39.9), Color::Green);
+    }
+
+    #[test]
+    fn db_color_silent_is_dark_gray() {
+        assert_eq!(db_color(-40.0), Color::DarkGray);
+        assert_eq!(db_color(-45.0), Color::DarkGray);
+        assert_eq!(db_color(-60.0), Color::DarkGray);
+    }
+}

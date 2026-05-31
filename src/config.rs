@@ -74,6 +74,25 @@ impl Config {
                 let content = std::fs::read_to_string(candidate)?;
                 return Ok(toml::from_str(&content)?);
             }
+
+            #[cfg(test)]
+            mod tests {
+                use super::*;
+
+                #[test]
+                fn default_config_has_expected_values() {
+                    let cfg = Config::default();
+                    assert_eq!(cfg.audio.device, "default");
+                    assert_eq!(cfg.audio.sample_rate, 16000);
+                    assert_eq!(cfg.audio.channels, 1);
+                    assert_eq!(cfg.asr.engine, "vosk");
+                    assert_eq!(cfg.asr.lang, "en-US");
+                    assert_eq!(cfg.subtitle.format, "srt");
+                    assert_eq!(cfg.subtitle.output, PathBuf::from("output.srt"));
+                    assert_eq!(cfg.subtitle.buffer_ms, 2000);
+                    assert_eq!(cfg.subtitle.max_duration_ms, 10000);
+                }
+            }
         }
 
         Ok(Self::default())

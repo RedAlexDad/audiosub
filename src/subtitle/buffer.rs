@@ -109,3 +109,205 @@ fn merge_into(a: &mut Segment, b: &Segment) {
     }
     a.text.push_str(&b.text);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn split_segment_short_enough() {
+        let seg = Segment {
+            start_ms: 1000,
+            end_ms: 3000,
+            text: "hello world".into(),
+        };
+        let result = split_segment(seg.clone(), 5000);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].start_ms, 1000);
+        assert_eq!(result[0].end_ms, 3000);
+        assert_eq!(result[0].text, "hello world");
+    }
+
+    #[test]
+    fn split_segment_zero_max_duration() {
+        let seg = Segment {
+            start_ms: 0,
+            end_ms: 5000,
+            text: "a b c".into(),
+        };
+        let result = split_segment(seg.clone(), 0);
+        assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn split_segment_needs_splitting() {
+        let seg = Segment {
+            start_ms: 0,
+            end_ms: 10000,
+            text: "one two three four".into(),
+        };
+        let result = split_segment(seg, 3000);
+        assert_eq!(result.len(), 4);
+        assert_eq!(result[0].text, "one");
+        assert_eq!(result[1].text, "two");
+        assert_eq!(result[2].text, "three");
+        assert_eq!(result[3].text, "four");
+        assert_eq!(result[0].start_ms, 0);
+        assert_eq!(result[3].end_ms, 10000);
+    }
+
+    #[test]
+    fn split_segment_exact_boundary() {
+        let seg = Segment {
+            start_ms: 0,
+            end_ms: 5000,
+            text: "a b".into(),
+        };
+        let result = split_segment(seg, 5000);
+        assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn buffer_push_splits_long_segments() {
+        let mut buf = SubtitleBuffer::new(2000, 3000);
+        buf.push(Segment {
+            start_ms: 0,
+            end_ms: 10000,
+            text: "a b c d".into(),
+        });
+        assert_eq!(buf.drain().len(), 4);
+    }
+
+    #[test]
+    fn buffer_flush_respects_buffer_ms() {
+        let mut buf = SubtitleBuffer::new(2000, 10000);
+        buf.push(Segment {
+            start_ms: 1000,
+            end_ms: 2000,
+            text: "hello".into(),
+        });
+        buf.push(Segment {
+            start_ms: 3000,
+            end_ms: 4000,
+            text: "world".into(),
+        });
+
+        // stream at 3000ms → cutoff = 1000 → first seg (end_ms=2000) isn't flushed yet
+        let flushed = buf.flush(3000);
+        assert_eq!(flushed.len(), 0);
+
+        // stream at 5000ms → cutoff = 3000 → first seg's end_ms (2000) ≤ 3000 → flushed
+        let flushed = buf.flush(5000);
+        assert_eq!(flushed.len(), 1);
+        assert_eq!(flushed[0].text, "hello");
+    }
+
+    #[test]
+    fn buffer_flush_merges_overlapping_segments() {
+        let mut buf = SubtitleBuffer::new(2000, 10000);
+        buf.push(Segment {
+            start_ms: 1000,
+            end_ms: 2500,
+            text: "hello".into(),
+        });
+        buf.push(Segment {
+            start_ms: 2000,
+            end_ms: 3500,
+            text: "world".into(),
+        });
+
+        let flushed = buf.flush(10000);
+        assert_eq!(flushed.len(), 1);
+        assert_eq!(flushed[0].start_ms, 1000);
+        assert_eq!(flushed[0].end_ms, 3500);
+        assert!(flushed[0].text.contains("hello"));
+        assert!(flushed[0].text.contains("world"));
+    }
+
+    #[test]
+    fn buffer_flush_keeps_non_ready_segments() {
+        let mut buf = SubtitleBuffer::new(2000, 10000);
+        buf.push(Segment {
+            start_ms: 1000,
+            end_ms: 2000,
+            text: "old".into(),
+        });
+        buf.push(Segment {
+            start_ms: 9000,
+            end_ms: 10000,
+            text: "recent".into(),
+        });
+
+        // cutoff = 3000 → only first seg ready
+        let flushed = buf.flush(5000);
+        assert_eq!(flushed.len(), 1);
+        assert_eq!(flushed[0].text, "old");
+
+        // remaining should have "recent"
+        let remaining = buf.drain();
+        assert_eq!(remaining.len(), 1);
+        assert_eq!(remaining[0].text, "recent");
+    }
+
+    #[test]
+    fn overlap_ms_detects_overlap() {
+        let a = Segment {
+            start_ms: 1000,
+            end_ms: 3000,
+            text: "a".into(),
+        };
+        let b = Segment {
+            start_ms: 2500,
+            end_ms: 4000,
+            text: "b".into(),
+        };
+        assert!(overlap_ms(&a, &b));
+        assert!(overlap_ms(&b, &a));
+    }
+
+    #[test]
+    fn overlap_ms_no_overlap() {
+        let a = Segment {
+            start_ms: 1000,
+            end_ms: 2000,
+            text: "a".into(),
+        };
+        let b = Segment {
+            start_ms: 3000,
+            end_ms: 4000,
+            text: "b".into(),
+        };
+        assert!(!overlap_ms(&a, &b));
+        assert!(!overlap_ms(&b, &a));
+    }
+
+    #[test]
+    fn merge_into_extends_bounds_and_text() {
+        let mut a = Segment {
+            start_ms: 2000,
+            end_ms: 3000,
+            text: "foo".into(),
+        };
+        let b = Segment {
+            start_ms: 1000,
+            end_ms: 4000,
+            text: "bar".into(),
+        };
+        merge_into(&mut a, &b);
+        assert_eq!(a.start_ms, 1000);
+        assert_eq!(a.end_ms, 4000);
+        assert_eq!(a.text, "foo bar");
+    }
+
+    #[test]
+    fn drain_empties_buffer() {
+        let mut buf = SubtitleBuffer::new(2000, 10000);
+        buf.push(Segment {
+            start_ms: 0,
+            end_ms: 1000,
+            text: "x".into(),
+        });
+        assert_eq!(buf.drain().len(), 1);
+        assert!(buf.drain().is_empty());
+    }
+}

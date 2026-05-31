@@ -7,5 +7,3 @@ pub mod widgets;
 pub mod worker;
 
 pub(crate) mod view;
-
-
