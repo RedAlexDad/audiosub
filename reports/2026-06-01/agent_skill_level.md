@@ -1,6 +1,6 @@
 # Оценка уровня программиста по кодовой базе audiosub
 
-**Дата:** 2026-06-01
+**Дата:** 2026-06-01 (updated)
 **Контекст:** Код написан через AI (vibe-coding), но архитектура, ревью и интеграция сделаны человеком.
 
 ---
@@ -42,28 +42,37 @@
 - Makefile с 30+ целями, цветной вывод, моделирование CI
 - Настройки для VSCode и Zed
 
-## 5. Тестирование (middle → senior)
+## 5. Тестирование (senior)
 
-- 48 unit-тестов в 6 модулях
+- **74 теста**: 48 inline unit + 26 integration (4 файла в `tests/`)
 - Хорошее покрытие edge cases: empty, zero, boundary, overflow, pause, duplicate, clip
 - `assert!` с tolerance для float (`1e-6`)
 - Описания тестов на русском через `println!("Описание: ...")`
 
-**Чего не хватало на момент написания:**
-- Только inline unit-тесты, нет `tests/` директории (integration tests)
-- Нет тестов для многопоточности (например, тестов гонок в worker)
-- Нет бенчмарков для latency-чувствительного кода
+### Integration tests (`tests/`)
+
+| Файл | Тестов | Что проверяет |
+|------|--------|---------------|
+| `subtitle_pipeline.rs` | 8 | SRT/VTT writer, buffer→file, split_segment, flush/drain |
+| `config_loading.rs` | 6 | Загрузка конфига, default-значения, битый TOML, serde roundtrip |
+| `concurrent_flags.rs` | 6 | WorkerHandle + Arc<AtomicBool> + mpsc: stop/pause/resume, multiple workers |
+| `perf_buffer.rs` | 6 | Zero-dep бенчмарки: split_segment (300s/20 слов), push 1000, flush, SRT/VTT write |
+
+### Performance benchmarks
+
+- Все через `std::time::Instant` — **ноль внешних dev-зависимостей** (criterion удалён)
+- Пороги подобраны под debug profile
+- Покрытие критического пути: `split_segment`, `push`, `flush`, `ms_to_srt/vtt`
 
 ## 6. Что мешает поставить 8-9/10 (минусы)
 
-| Проблема | Серьёзность |
-|----------|-------------|
-| `#![allow(dead_code)]` на весь крейт | Средняя |
-| `unsafe impl Send for PulseCapture` (хоть с комментарием) | Средняя |
-| Дублирование `compute_rms`/`compute_peak` в worker.rs и app.rs | Низкая |
-| Нет integration tests | Средняя |
-| `engine.finalize()` → `unwrap_or_default()` (тихая потеря ошибок) | Низкая |
-| Legacy capture.rs дублирует worker.rs | Низкая |
+| Проблема | Серьёзность | Статус |
+|----------|-------------|--------|
+| `#![allow(dead_code)]` на весь крейт | Средняя | ❌ открыто |
+| `unsafe impl Send for PulseCapture` (хоть с комментарием) | Средняя | ❌ открыто |
+| Дублирование `compute_rms`/`compute_peak` в worker.rs и app.rs | Низкая | ❌ открыто |
+| `engine.finalize()` → `unwrap_or_default()` (тихая потеря ошибок) | Низкая | ❌ открыто |
+| Legacy capture.rs дублирует worker.rs | Низкая | ❌ открыто |
 
 ## 7. Вклад человека vs AI
 
@@ -71,7 +80,7 @@
 |---------------|-------------------|
 | Синтаксис, имплементации, тесты | Архитектура модулей и трейтов |
 | Код-генерация функций | Выбор стека (PulseAudio, Vosk, ratatui, rubato) |
-| Написание 48 тестов | CI/CD: Makefile, Docker, GitHub Actions |
+| Написание 74 тестов (48 inline + 26 integration) | CI/CD: Makefile, Docker, GitHub Actions |
 | | Ревью: фильтрация AI-ошибок и чушь-генерации |
 | | Интеграция: сборка разнородных компонентов |
 | | Тредовая модель: mpsc + Arc<AtomicBool> |
