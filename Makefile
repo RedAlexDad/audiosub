@@ -221,7 +221,7 @@ verify:
 	echo "$(CYAN)  Verification pipeline$(NC)"; \
 	echo "$(CYAN)══════════════════════════════════════════════$(NC)"; \
 	echo ""; \
-	echo "$(BOLD)[1/4] Running unit tests (48 tests across 6 modules, с описаниями)...$(NC)"; \
+	echo "$(BOLD)[1/4] Running all tests (74 tests across 4 test suites, с описаниями)...$(NC)"; \
 	cargo test $(if $(filter 1,$(SHOW_DESCRIBE)),-- --show-output,) && \
 	echo "$(GREEN)✓ Tests passed$(NC)" && \
 	echo ""; \
