@@ -14,6 +14,11 @@
 - [x] Incremental recognition: `feed_audio`, `partial_text`, `drain_segments`
 - [x] Word-level timestamps from Vosk
 
+### ASR Backend (Whisper.cpp)
+- [x] Whisper backend (`whisper_backend.rs`, 190 строк, feature `#[cfg(feature = "whisper")]`)
+- [x] Интеграция с `whisper-rs`, реальные вызовы `state.full()`, `full_get_segment_text()`
+- [x] `make build-whisper` / `make run-whisper` / `make build-both`
+
 ### Subtitle Output
 - [x] `SubtitleWriter` — streaming SRT/VTT via `BufWriter`
 - [x] `SubtitleBuffer` — delay by `buffer_ms`, merge overlapping segments
@@ -24,10 +29,20 @@
 - [x] Full-history display (no cap)
 - [x] Scrolling: `↑`/`↓`, `PgUp`/`PgDown`, `Home`/`End`
 - [x] Pause mode (`p`) — freeze display for text copy
+- [x] Reset (`r`) — сброс engine, буфера, ресемплера
 - [x] Export: `s` → SRT, `S` (Shift+S) → TXT to `saved/`
 - [x] Save confirmation message (15 frames, auto-clear)
-- [x] Quit: `q`/`Esc`/`Ctrl+D` (Ctrl+C removed for terminal copy)
+- [x] VU meter — `VuMeter` widget с RMS→dB, цветовая индикация
+- [x] Log viewer — `Screen::Logs`, читает `/tmp/audiosub_stderr.log`
+- [x] Quit: `q`/`Esc`/`Ctrl+D`
 - [x] TUI is default mode; `--no-tui` for CLI
+
+### Multithreaded Architecture
+- [x] 3 потока: Capture → mpsc → ASR → mpsc → TUI
+- [x] `Arc<AtomicBool>` для stop/pause/reset
+- [x] Capture thread — `pa_simple_read()`, compute RMS/peak, send `AudioData`
+- [x] ASR thread — resample + `engine.feed_audio()` + `drain_segments()`
+- [x] TUI loop — keyboard input + rendering + receive `UiUpdate`
 
 ### Configuration & CLI
 - [x] `audiosub.toml` — typed TOML sections `[audio]`, `[asr]`, `[subtitle]`
@@ -61,19 +76,9 @@
 
 ## 3. Next
 
-### Whisper.cpp Backend
-- [ ] `#[cfg(feature = "whisper")]` module
-- [ ] Integration with whisper.cpp bindings
-
-### Extended TUI Features
-- [ ] VU meter / audio level indicator
-- [ ] Pause/reset button
-- [ ] Log viewer for debug output
+### CLI
+- [ ] `--engine` флаг для выбора vosk/whisper при старте (сейчас только в TOML)
 
 ### Documentation
 - [ ] README with setup and usage
 - [ ] ARCHITECTURE.md
-
-### Polish
-- [ ] Error handling (user-friendly messages)
-- [ ] Graceful handling of missing model/library
