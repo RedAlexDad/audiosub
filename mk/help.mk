@@ -55,7 +55,7 @@ help:
 	@printf '  $(GREEN)docker-build [ENGINE=vosk]$(NC)   Собрать образ\n'
 	@printf '  $(GREEN)docker-rebuild [ENGINE=vosk]$(NC) Пересобрать без кэша\n'
 	@printf '  $(GREEN)docker-up$(NC)               Запустить (foreground)\n'
-	@printf '  $(GREEN)docker-tui$(NC)              Запустить с TUI (интерактивно)\n'
+	@printf '  $(GREEN)docker-run$(NC)              Запустить с TUI (интерактивно)\n'
 	@printf '  $(GREEN)docker-down$(NC)             Остановить\n'
 	@printf '  $(GREEN)docker-restart$(NC)          down + up\n'
 	@printf '  $(GREEN)docker-clean$(NC)            Удалить образ\n'

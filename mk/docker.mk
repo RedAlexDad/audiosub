@@ -53,7 +53,7 @@ docker-clean:
 
 # ── TUI mode ────────────────────────────────────────────────
 
-docker-tui: docker-build
+docker-run: docker-build
 	@echo "$(CYAN)→ Starting TUI...$(NC)"
 	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) \
 		$(COMPOSE) run --rm --service-ports \
