@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 pub mod asr;
 pub mod audio;
 pub mod cli;

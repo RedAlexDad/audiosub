@@ -42,12 +42,6 @@ impl PulseCapture {
     }
 }
 
-// Safety: PulseAudio's pa_simple_* functions are thread-safe (internal locking).
-// The `Simple` wrapper contains a raw pointer but we move PulseCapture to a dedicated
-// capture thread with no concurrent access.
-#[allow(unsafe_code)]
-unsafe impl Send for PulseCapture {}
-
 impl AudioCapture for PulseCapture {
     fn start(&mut self) -> Result<()> {
         let spec = Spec {
