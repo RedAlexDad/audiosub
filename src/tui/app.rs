@@ -23,6 +23,8 @@ pub struct TuiApp {
     pub log_lines: Vec<String>,
     pub log_needs_refresh: bool,
     pub reset_requested: bool,
+    pub partial_height: u16,
+    pub drag_start: Option<(u16, u16)>,
 }
 
 impl TuiApp {
@@ -46,6 +48,8 @@ impl TuiApp {
             log_lines: Vec::new(),
             log_needs_refresh: true,
             reset_requested: false,
+            partial_height: 3,
+            drag_start: None,
         }
     }
 
@@ -75,7 +79,7 @@ impl TuiApp {
         }
         if !text.is_empty() {
             let prev = self.partial_history.back().map(|s| s.as_str()).unwrap_or("");
-            if text != prev {
+            if text != prev && (prev.is_empty() || !(text.starts_with(prev) || prev.starts_with(text))) {
                 self.partial_history.push_back(text.to_string());
                 if self.partial_history.len() > 30 {
                     self.partial_history.pop_front();

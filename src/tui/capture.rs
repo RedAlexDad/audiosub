@@ -2,6 +2,7 @@ use std::io;
 use std::time::Duration;
 
 use anyhow::Result;
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
 use crossterm::execute;
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode};
 use ratatui::Terminal;
@@ -22,7 +23,7 @@ pub fn run_with_capture(
 ) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
@@ -30,7 +31,7 @@ pub fn run_with_capture(
     let result = capture_loop(app, &mut terminal, capture, engine, output, buffer, chunk_size);
 
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
     terminal.show_cursor()?;
 
     result
@@ -45,6 +46,9 @@ fn capture_loop(
     buffer: &mut crate::subtitle::SubtitleBuffer,
     chunk_size: usize,
 ) -> Result<()> {
+    // Smaller audio reads (~25ms) for responsive UI instead of ~100ms
+    let read_step = (chunk_size / 4).max(64);
+
     while app.running {
         terminal.draw(|f| view::render(app, f))?;
 
@@ -55,8 +59,11 @@ fn capture_loop(
         }
 
         input::handle_input(app)?;
+        if !app.running {
+            break;
+        }
 
-        if let Some(chunk) = capture.read(chunk_size)? {
+        if let Some(chunk) = capture.read(read_step)? {
             app.update_audio(chunk.data.len());
             app.update_audio_levels(&chunk.data);
 

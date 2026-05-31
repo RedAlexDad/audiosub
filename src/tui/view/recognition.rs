@@ -11,7 +11,8 @@ pub fn render_recognition(app: &TuiApp, frame: &mut Frame, area: Rect) {
         return;
     }
 
-    let [partial_area, history_area] = Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).areas(area);
+    let ph = app.partial_height.min(area.height.saturating_sub(3));
+    let [partial_area, history_area] = Layout::vertical([Constraint::Length(ph), Constraint::Fill(1)]).areas(area);
 
     let partial_block = Block::default()
         .borders(Borders::ALL)
