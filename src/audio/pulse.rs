@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+
 use anyhow::{Context, Result};
 use libpulse_binding::sample::{Format, Spec};
 use libpulse_binding::stream::Direction;
@@ -29,7 +31,29 @@ impl PulseCapture {
         self.target_rate = target_rate;
         self
     }
+
+    /// Read raw PCM f32 samples from PulseAudio WITHOUT resampling.
+    /// `n` is the number of f32 samples to request.
+    pub fn read_raw(&mut self, n: usize) -> Result<Option<Vec<f32>>> {
+        let pa = self.pa.as_ref().context("PulseAudio not started")?;
+        let byte_len = n * 4;
+        let mut buf = vec![0u8; byte_len];
+        if let Err(e) = pa.read(&mut buf) {
+            tracing::warn!("PulseAudio read error: {}", e);
+            return Ok(None);
+        }
+        let data: Vec<f32> = buf
+            .chunks_exact(4)
+            .map(|b| f32::from_ne_bytes([b[0], b[1], b[2], b[3]]))
+            .collect();
+        Ok(Some(data))
+    }
 }
+
+// Safety: PulseAudio's pa_simple_* functions are thread-safe (internal locking).
+// The `Simple` wrapper contains a raw pointer but we move PulseCapture to a dedicated
+// capture thread with no concurrent access.
+unsafe impl Send for PulseCapture {}
 
 impl AudioCapture for PulseCapture {
     fn start(&mut self) -> Result<()> {

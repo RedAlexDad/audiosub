@@ -215,10 +215,9 @@ fn main() -> Result<()> {
     {
         let mut capture = audio::PulseCapture::new(&device, cfg.audio.sample_rate);
         capture.start()?;
-        let engine_rate = capture.sample_rate();
 
         let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-        let mut engine = create_engine(&cfg.asr.engine, engine_rate as f32);
+        let mut engine = create_engine(&cfg.asr.engine, 16000.0);
 
         let _stderr_guard = redirect_stderr::StderrRedirect::new("/tmp/audiosub_stderr.log")?;
 
@@ -234,18 +233,18 @@ fn main() -> Result<()> {
             .or_else(|| Some(cfg.subtitle.output.clone()))
             .unwrap_or_else(|| PathBuf::from("output.srt"));
         let output_format = args.format.clone().unwrap_or(cfg.subtitle.format.clone());
-        let mut output = SubtitleOutput::create(&output_path, &output_format)?;
-        let mut buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms, max_duration);
+        let output = SubtitleOutput::create(&output_path, &output_format)?;
+        let buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms, max_duration);
 
         let chunk_size = (cfg.audio.sample_rate as usize) / 10;
-        let mut app = tui::TuiApp::new(engine_rate, max_duration);
-        tui::capture::run_with_capture(
-            &mut app,
-            &mut capture,
-            engine.as_mut(),
-            &mut output,
-            &mut buffer,
+        tui::worker::run_tui(
+            capture,
+            engine,
+            output,
+            buffer,
+            cfg.audio.sample_rate,
             chunk_size,
+            max_duration,
         )
     }
 
