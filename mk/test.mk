@@ -1,18 +1,10 @@
 # ──────────────────────────────────────────────────────────────
-# audiosub — корневой Makefile
-# Все цели вынесены в mk/*.mk
+# audiosub — тесты
 # ──────────────────────────────────────────────────────────────
 
-include mk/config.mk
-include mk/help.mk
-include mk/build.mk
-include mk/release.mk
-include mk/model.mk
-include mk/test.mk
-include mk/run.mk
-include mk/quality.mk
-include mk/docker.mk
-include mk/util.mk
+.PHONY: test
 
-# Цель по умолчанию — справка
-all: help
+test:
+	@echo "$(CYAN)→ Running tests...$(NC)"
+	cargo test $(if $(filter 1,$(SHOW_DESCRIBE)),-- --show-output,)
+	@echo "$(GREEN)✓ Tests passed$(NC)"
