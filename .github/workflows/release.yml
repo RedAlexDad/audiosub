@@ -37,9 +37,10 @@ jobs:
           sudo ldconfig
           rm -rf /tmp/vosk.zip /tmp/vosk
       - name: Build release (vosk+whisper+tui)
-        run: |
-          WHISPER_DONT_GENERATE_BINDINGS=1 \
-            cargo build --release --features vosk,whisper,tui
+        env:
+          WHISPER_DONT_GENERATE_BINDINGS: 1
+          RUST_BACKTRACE: 1
+        run: cargo build --release --features vosk,whisper,tui
       - name: Pack binary
         run: |
           mkdir -p dist
