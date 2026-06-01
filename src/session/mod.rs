@@ -28,12 +28,13 @@ pub fn run_session(
 
     tracing::info!("Capturing from: {device} ({source_rate} → {engine_rate} Hz)");
 
-    let model_path = resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-    let mut engine = create_engine(engine_name, engine_rate as f32);
+    let effective = resolve_engine(engine_name);
+    let model_path = resolve_model_path(&effective, args.model.as_ref(), &cfg.asr);
+    let mut engine = create_engine(&effective, engine_rate as f32);
     engine.load_model(&model_path)?;
     tracing::info!(
         "ASR engine '{engine}' loaded model from: {model_path}",
-        engine = engine_name
+        engine = effective
     );
 
     let output_path = args
@@ -116,6 +117,23 @@ pub fn run_session(
     );
 
     Ok(())
+}
+
+pub fn resolve_engine(engine_name: &str) -> String {
+    match engine_name {
+        #[cfg(feature = "vosk")]
+        "vosk" => "vosk".into(),
+        #[cfg(feature = "whisper")]
+        "whisper" => "whisper".into(),
+        _ => {
+            #[cfg(feature = "vosk")]
+            { "vosk".into() }
+            #[cfg(all(feature = "whisper", not(feature = "vosk")))]
+            { "whisper".into() }
+            #[cfg(not(any(feature = "vosk", feature = "whisper")))]
+            { panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.") }
+        }
+    }
 }
 
 #[allow(unused_variables)]

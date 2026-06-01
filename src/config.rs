@@ -20,6 +20,8 @@ pub struct AudioConfig {
 pub struct AsrConfig {
     pub engine: String,
     pub model_path: PathBuf,
+    pub model_path_vosk: Option<PathBuf>,
+    pub model_path_whisper: Option<PathBuf>,
     pub lang: String,
 }
 
@@ -42,6 +44,8 @@ impl Default for Config {
             asr: AsrConfig {
                 engine: "vosk".into(),
                 model_path: dirs().join("models"),
+                model_path_vosk: None,
+                model_path_whisper: None,
                 lang: "en-US".into(),
             },
             subtitle: SubtitleConfig {

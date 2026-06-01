@@ -63,12 +63,13 @@ fn main() -> Result<()> {
         let mut capture = audiosub::audio::PulseCapture::new(&device, cfg.audio.sample_rate);
         capture.start()?;
 
-        let model_path = session::model::resolve_model_path(args.model.as_ref(), &cfg.asr.model_path);
-        let mut engine = session::create_engine(engine_name, 16000.0);
+        let effective = session::resolve_engine(engine_name);
+        let model_path = session::model::resolve_model_path(&effective, args.model.as_ref(), &cfg.asr);
+        let mut engine = session::create_engine(&effective, 16000.0);
         engine.load_model(&model_path)?;
         tracing::info!(
             "ASR engine '{engine}' loaded model from: {model_path}",
-            engine = engine_name
+            engine = effective
         );
 
         let output_path = args

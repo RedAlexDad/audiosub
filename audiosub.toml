@@ -4,8 +4,10 @@ sample_rate = 16000
 channels = 1
 
 [asr]
-engine = "vosk"
+engine = "whisper"
 model_path = "models/vosk-model-small-ru-0.22"
+model_path_vosk = "models/vosk-model-small-ru-0.22"
+model_path_whisper = "models/ggml-base.bin"
 lang = "ru-RU"
 
 [subtitle]
