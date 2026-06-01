@@ -90,6 +90,7 @@ fn main() -> Result<()> {
             cfg.audio.sample_rate,
             chunk_size,
             max_duration,
+            &effective,
         )
     }
 

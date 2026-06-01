@@ -18,8 +18,16 @@ pub fn render_top(app: &TuiApp, frame: &mut Frame, area: Rect) {
 
     let elapsed = format!("{:02}:{:02}", app.elapsed.as_secs() / 60, app.elapsed.as_secs() % 60);
 
+    let engine_label = match app.engine_name.as_str() {
+        "vosk" => Span::styled(" VOSK ", Style::new().fg(Color::Blue)),
+        "whisper" => Span::styled(" WHISPER ", Style::new().fg(Color::Blue)),
+        other => Span::styled(format!(" {other} "), Style::new().fg(Color::Blue)),
+    };
+
     let title = Line::from(vec![
         Span::styled(" audiosub ", Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        Span::raw(" │ "),
+        engine_label,
         Span::raw(" │ "),
         status,
         Span::raw(" │ "),
