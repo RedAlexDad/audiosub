@@ -39,6 +39,8 @@ jobs:
       - name: Build release (vosk+whisper+tui)
         env:
           RUST_BACKTRACE: 1
+          LIBRARY_PATH: /usr/local/lib
+          RUSTFLAGS: -L /usr/local/lib
         run: cargo build --release --features vosk,whisper,tui
       - name: Pack binary
         run: |
