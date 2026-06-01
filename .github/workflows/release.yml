@@ -26,6 +26,13 @@ jobs:
         run: >
           sudo apt-get update -qq &&
           sudo apt-get install -y -qq libpulse-dev clang
+      - name: Build whisper-only (no Vosk needed)
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          cargo build --release --no-default-features --features whisper,tui
+          mkdir -p dist
+          cp target/release/audiosub dist/audiosub-whisper
       - name: Install Vosk SDK
         run: |
           curl -sL -o /tmp/vosk.zip \
@@ -44,8 +51,7 @@ jobs:
         run: cargo build --release --features vosk,whisper,tui
       - name: Pack binary
         run: |
-          mkdir -p dist
-          cp target/release/audiosub dist/
+          cp target/release/audiosub dist/audiosub
           cp target/release/audiosub "dist/audiosub-${{ github.ref_name }}-linux-amd64"
       - name: Upload artifact
         uses: actions/upload-artifact@v4
