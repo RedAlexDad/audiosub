@@ -19,20 +19,19 @@ RUN apt-get update && apt-get install -y \
 
 # Vosk SDK (needed at runtime for Vosk engine)
 COPY lib/ /build-libs/
-RUN if [ "$ENGINE" = "vosk" ] || [ "$ENGINE" = "both" ]; then \
+RUN set -ex; \
+    if [ "$ENGINE" = "vosk" ] || [ "$ENGINE" = "both" ]; then \
         if [ -f /build-libs/vosk/libvosk.so ]; then \
-            echo "Using local libvosk.so from lib/vosk/" && \
             cp /build-libs/vosk/libvosk.so /usr/local/lib/; \
         else \
-            echo "Downloading Vosk SDK from GitHub..." && \
-            curl -L -o /tmp/vosk.zip \
-                https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip && \
-            unzip -q /tmp/vosk.zip -d /tmp/vosk && \
-            cp /tmp/vosk/libvosk.so /usr/local/lib/; \
+            curl -sL -o /tmp/vosk.zip \
+                https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip; \
+            unzip -q /tmp/vosk.zip -d /tmp/vosk; \
+            find /tmp/vosk -name 'libvosk.so' -exec sh -c 'cp "$1" /usr/local/lib/' _ {} \; ; \
             rm -rf /tmp/vosk.zip /tmp/vosk; \
-        fi && \
+        fi; \
         ldconfig; \
-        mkdir -p /runtime-libs && \
+        mkdir -p /runtime-libs; \
         cp /usr/local/lib/libvosk.so* /runtime-libs/; \
     else \
         mkdir -p /runtime-libs; \
