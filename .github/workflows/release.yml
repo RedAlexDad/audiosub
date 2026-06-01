@@ -36,11 +36,15 @@ jobs:
           ' _ {} \;
           sudo ldconfig
           rm -rf /tmp/vosk.zip /tmp/vosk
+      - name: Install clang (for bindgen)
+        run: sudo apt-get install -y -qq clang
       - name: Build release (vosk+whisper+tui)
         env:
           WHISPER_DONT_GENERATE_BINDINGS: 1
           RUST_BACKTRACE: 1
-        run: cargo build --release --features vosk,whisper,tui
+        run: |
+          set -x
+          cargo build --release --features vosk,whisper,tui 2>&1
       - name: Pack binary
         run: |
           mkdir -p dist
