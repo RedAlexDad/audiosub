@@ -13,7 +13,14 @@ use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 
 use self::model::resolve_model_path;
 
-pub fn run_session(args: &Cli, cfg: &Config, device: &str, source_rate: u32, duration: Duration, engine_name: &str) -> Result<()> {
+pub fn run_session(
+    args: &Cli,
+    cfg: &Config,
+    device: &str,
+    source_rate: u32,
+    duration: Duration,
+    engine_name: &str,
+) -> Result<()> {
     let mut capture = PulseCapture::new(device, source_rate);
     capture.start()?;
 

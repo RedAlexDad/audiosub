@@ -1,3 +1,7 @@
+# ──────────────────────────────────────────────────────────────
+# CI — проверка каждого push/PR в main
+# ──────────────────────────────────────────────────────────────
+
 name: CI
 
 on:
@@ -6,45 +10,141 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  check:
+  fmt:
+    name: fmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          components: clippy, rustfmt
+          components: rustfmt
+      - run: cargo fmt --check
 
+  clippy:
+    name: clippy (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: minimal
+            args: --no-default-features
+          - label: default (vosk+tui)
+            args: ""
+          - label: whisper+tui
+            args: --no-default-features --features whisper,tui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y libpulse-dev
+        run: >
+          sudo apt-get update -qq &&
+          sudo apt-get install -y -qq libpulse-dev
+      - name: Clippy
+        run: cargo clippy ${{ matrix.args }} -- -D warnings
 
-      - name: cargo check
-        run: cargo check --no-default-features
-
-      - name: cargo fmt
-        run: cargo fmt --check
-
-      - name: cargo clippy
-        run: cargo clippy --no-default-features -- -D warnings
+  check:
+    name: check (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: minimal
+            args: --no-default-features
+          - label: default (vosk+tui)
+            args: ""
+          - label: whisper+tui
+            args: --no-default-features --features whisper,tui
+          - label: all engines
+            args: --features vosk,whisper,tui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install system deps
+        run: >
+          sudo apt-get update -qq &&
+          sudo apt-get install -y -qq libpulse-dev
+      - name: Download Vosk SDK
+        if: ${{ contains(matrix.args, 'vosk') }}
+        run: |
+          curl -sL -o /tmp/vosk.zip \
+            https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip
+          unzip -q /tmp/vosk.zip -d /tmp/vosk
+          find /tmp/vosk -name 'libvosk.so' -exec sh -c '
+            cp "$1" /usr/local/lib/
+          ' _ {} \;
+          ldconfig
+          rm -rf /tmp/vosk.zip /tmp/vosk
+      - name: Cargo check
+        run: cargo check ${{ matrix.args }}
 
   test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-
       - name: Install system deps
-        run: sudo apt-get update && sudo apt-get install -y libpulse-dev
-
+        run: >
+          sudo apt-get update -qq &&
+          sudo apt-get install -y -qq libpulse-dev
       - name: cargo test
         run: cargo test --no-default-features
 
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: cargo audit
+        uses: actions-rust-lang/audit@v1
+
+  machete:
+    name: unused-deps
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install cargo-machete
+        run: cargo install cargo-machete --locked
+      - name: Check unused dependencies
+        run: cargo machete
+
   docker:
+    name: docker
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t audiosub .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image (vosk)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: audiosub:ci
+          build-args: |
+            ENGINE=vosk
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Verify image
+        run: docker run --rm audiosub:ci --help

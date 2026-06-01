@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────────────────────
+# Audit — еженедельная проверка безопасности зависимостей
+# ──────────────────────────────────────────────────────────────
+
+name: Audit
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # каждый понедельник в 06:00 UTC
+  workflow_dispatch:        # можно запускать вручную
+
+jobs:
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/audit@v1
+
+  outdated:
+    name: cargo outdated
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install cargo-outdated
+        run: cargo install cargo-outdated --locked
+      - name: Check outdated dependencies
+        run: cargo outdated --exit-code 1

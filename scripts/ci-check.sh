@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────
+# Локальный CI-checkscript — дублирует логику .github/workflows/ci.yml
+# Запускать из корня проекта:  make ci-check
+# ──────────────────────────────────────────────────────────────
 set -euo pipefail
 
 GREEN='\033[0;32m'
@@ -10,6 +14,8 @@ BOLD='\033[1m'
 echo -e "${BOLD}CI/CD Local Check${NC}"
 echo "========================"
 echo ""
+
+FAILED=0
 
 run_step() {
     local name="$1"
@@ -26,18 +32,32 @@ run_step() {
     fi
 }
 
-FAILED=0
-
-run_step "cargo check (no-default-features)" cargo check --no-default-features
-FAILED=$((FAILED + $?))
-
-run_step "cargo test (no-default-features)" cargo test --no-default-features
-FAILED=$((FAILED + $?))
-
-run_step "cargo clippy" cargo clippy --no-default-features -- -D warnings
-FAILED=$((FAILED + $?))
-
+# ── Format ──────────────────────────────────
 run_step "cargo fmt --check" cargo fmt --check
+FAILED=$((FAILED + $?))
+
+# ── Clippy (matrix) ─────────────────────────
+run_step "clippy (minimal)" cargo clippy --no-default-features -- -D warnings
+FAILED=$((FAILED + $?))
+
+run_step "clippy (default)" cargo clippy -- -D warnings
+FAILED=$((FAILED + $?))
+
+run_step "clippy (whisper+tui)" cargo clippy --no-default-features --features whisper,tui -- -D warnings
+FAILED=$((FAILED + $?))
+
+# ── Check (matrix) ──────────────────────────
+run_step "check (minimal)" cargo check --no-default-features
+FAILED=$((FAILED + $?))
+
+run_step "check (default)" cargo check
+FAILED=$((FAILED + $?))
+
+run_step "check (whisper+tui)" cargo check --no-default-features --features whisper,tui
+FAILED=$((FAILED + $?))
+
+# ── Tests ──────────────────────────────────
+run_step "cargo test" cargo test --no-default-features
 FAILED=$((FAILED + $?))
 
 echo "========================"
