@@ -1,13 +1,16 @@
-use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
 use clap::Parser;
 
-use audiosub::audio::AudioCapture;
 use audiosub::cli::Cli;
 use audiosub::session;
+#[cfg(feature = "tui")]
+use audiosub::audio::AudioCapture;
+#[cfg(feature = "tui")]
 use audiosub::subtitle::{SubtitleBuffer, SubtitleOutput};
+#[cfg(feature = "tui")]
+use std::path::PathBuf;
 
 fn main() -> Result<()> {
     let args = Cli::parse();
@@ -48,6 +51,7 @@ fn main() -> Result<()> {
         .unwrap_or_else(|| "default".into());
 
     let duration = Duration::from_secs(args.duration.unwrap_or(u64::MAX));
+    #[cfg(feature = "tui")]
     let max_duration = args.max_duration.unwrap_or(cfg.subtitle.max_duration_ms);
 
     if args.no_tui {

@@ -64,5 +64,15 @@ strip = true
 opt-level = 0
 debug = true
 
+[package.metadata.cargo-machete]
+ignored = [
+    "duct",
+    "libc",
+    "reqwest",
+    "thiserror",
+    "tokio",
+    "tracing-appender",
+]
+
 [lints.rust]
 unsafe_code = "deny"

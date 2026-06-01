@@ -118,6 +118,7 @@ pub fn run_session(
     Ok(())
 }
 
+#[allow(unused_variables)]
 pub fn create_engine(engine_name: &str, sample_rate: f32) -> Box<dyn AsrEngine> {
     match engine_name {
         #[cfg(feature = "vosk")]
