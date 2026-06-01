@@ -70,12 +70,13 @@ impl AsrEngine for VoskEngine {
         let state = self.vosk.accept_waveform(rec, &pcm);
         let json = self.vosk.partial_result(rec);
         let segment = if matches!(state, vosk_dl::DecodingState::Finalized) {
-            Self::parse_result(&json)
+            let result_json = self.vosk.result(rec);
+            Self::parse_result(&result_json)
         } else {
             None
         };
 
-        self.partial = json;
+        self.partial = Self::parse_partial(&json);
 
         if let Some(seg) = segment {
             debug!(
@@ -90,7 +91,8 @@ impl AsrEngine for VoskEngine {
 
     fn partial_text(&mut self) -> Result<String> {
         if let Some(rec) = self.recognizer.as_ref() {
-            self.partial = self.vosk.partial_result(rec);
+            let json = self.vosk.partial_result(rec);
+            self.partial = Self::parse_partial(&json);
         }
         Ok(self.partial.clone())
     }
@@ -137,6 +139,16 @@ struct VoskWord {
 }
 
 impl VoskEngine {
+    fn parse_partial(json: &str) -> String {
+        #[derive(serde::Deserialize)]
+        struct Partial {
+            partial: String,
+        }
+        serde_json::from_str::<Partial>(json)
+            .map(|p| p.partial)
+            .unwrap_or_default()
+    }
+
     fn parse_result(json: &str) -> Option<Segment> {
         let output: VoskOutput = serde_json::from_str(json).ok()?;
         let text = output.text.trim().to_string();
