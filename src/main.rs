@@ -3,10 +3,10 @@ use std::time::Duration;
 use anyhow::Result;
 use clap::Parser;
 
-use audiosub::cli::Cli;
-use audiosub::session;
 #[cfg(feature = "tui")]
 use audiosub::audio::AudioCapture;
+use audiosub::cli::Cli;
+use audiosub::session;
 #[cfg(feature = "tui")]
 use audiosub::subtitle::{SubtitleBuffer, SubtitleOutput};
 #[cfg(feature = "tui")]

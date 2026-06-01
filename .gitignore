@@ -1,7 +1,7 @@
 /target
 .cargo
 **/*.rs.bk
-Cargo.lock
+
 .env
 *.srt
 *.vtt

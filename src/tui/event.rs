@@ -58,14 +58,12 @@ pub fn handle_input(app: &mut TuiApp) -> Result<bool> {
                     app.segments.pop();
                     app.segment_count = app.segment_count.saturating_sub(1);
                 }
-                KeyCode::Up => {
-                    if !app.segments.is_empty() {
-                        app.auto_scroll = false;
-                        app.scroll_offset = app
-                            .scroll_offset
-                            .saturating_add(1)
-                            .min(app.segments.len().saturating_sub(1));
-                    }
+                KeyCode::Up if !app.segments.is_empty() => {
+                    app.auto_scroll = false;
+                    app.scroll_offset = app
+                        .scroll_offset
+                        .saturating_add(1)
+                        .min(app.segments.len().saturating_sub(1));
                 }
                 KeyCode::Down => {
                     app.scroll_offset = app.scroll_offset.saturating_sub(1);
@@ -73,14 +71,12 @@ pub fn handle_input(app: &mut TuiApp) -> Result<bool> {
                         app.auto_scroll = true;
                     }
                 }
-                KeyCode::PageUp => {
-                    if !app.segments.is_empty() {
-                        app.auto_scroll = false;
-                        app.scroll_offset = app
-                            .scroll_offset
-                            .saturating_add(10)
-                            .min(app.segments.len().saturating_sub(1));
-                    }
+                KeyCode::PageUp if !app.segments.is_empty() => {
+                    app.auto_scroll = false;
+                    app.scroll_offset = app
+                        .scroll_offset
+                        .saturating_add(10)
+                        .min(app.segments.len().saturating_sub(1));
                 }
                 KeyCode::PageDown => {
                     app.scroll_offset = app.scroll_offset.saturating_sub(10);
@@ -88,11 +84,9 @@ pub fn handle_input(app: &mut TuiApp) -> Result<bool> {
                         app.auto_scroll = true;
                     }
                 }
-                KeyCode::Home => {
-                    if !app.segments.is_empty() {
-                        app.auto_scroll = false;
-                        app.scroll_offset = app.segments.len() - 1;
-                    }
+                KeyCode::Home if !app.segments.is_empty() => {
+                    app.auto_scroll = false;
+                    app.scroll_offset = app.segments.len() - 1;
                 }
                 KeyCode::End => {
                     app.scroll_offset = 0;
