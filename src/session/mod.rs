@@ -30,7 +30,7 @@ pub fn run_session(
 
     let effective = resolve_engine(engine_name);
     let model_path = resolve_model_path(&effective, args.model.as_ref(), &cfg.asr);
-    let mut engine = create_engine(&effective, engine_rate as f32);
+    let mut engine = create_engine(&effective, engine_rate as f32)?;
     engine.load_model(&model_path)?;
     tracing::info!(
         "ASR engine '{engine}' loaded model from: {model_path}",
@@ -121,47 +121,32 @@ pub fn run_session(
 
 pub fn resolve_engine(engine_name: &str) -> String {
     match engine_name {
-        #[cfg(feature = "vosk")]
-        "vosk" => "vosk".into(),
-        #[cfg(feature = "whisper")]
+        "vosk" if crate::asr::vosk_dl::is_available() => "vosk".into(),
         "whisper" => "whisper".into(),
         _ => {
-            #[cfg(feature = "vosk")]
-            {
+            if crate::asr::vosk_dl::is_available() {
+                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to vosk");
                 "vosk".into()
-            }
-            #[cfg(all(feature = "whisper", not(feature = "vosk")))]
-            {
-                "whisper".into()
-            }
-            #[cfg(not(any(feature = "vosk", feature = "whisper")))]
-            {
-                panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.")
+            } else {
+                #[cfg(feature = "whisper")]
+                {
+                    tracing::warn!("Unknown ASR engine '{engine_name}', falling back to whisper");
+                    "whisper".into()
+                }
+                #[cfg(not(feature = "whisper"))]
+                panic!("No ASR backend available (install libvosk.so or enable whisper feature)");
             }
         }
     }
 }
 
-#[allow(unused_variables)]
-pub fn create_engine(engine_name: &str, sample_rate: f32) -> Box<dyn AsrEngine> {
+pub fn create_engine(engine_name: &str, sample_rate: f32) -> Result<Box<dyn AsrEngine>> {
     match engine_name {
-        #[cfg(feature = "vosk")]
-        "vosk" => Box::new(crate::asr::vosk_backend::VoskEngine::new(sample_rate)),
+        "vosk" => Ok(Box::new(crate::asr::vosk_backend::VoskEngine::new(sample_rate)?)),
         #[cfg(feature = "whisper")]
-        "whisper" => Box::new(crate::asr::whisper_backend::WhisperEngine::new(sample_rate)),
-        _ => {
-            #[cfg(feature = "vosk")]
-            {
-                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to vosk");
-                Box::new(crate::asr::vosk_backend::VoskEngine::new(sample_rate))
-            }
-            #[cfg(all(feature = "whisper", not(feature = "vosk")))]
-            {
-                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to whisper");
-                Box::new(crate::asr::whisper_backend::WhisperEngine::new(sample_rate))
-            }
-            #[cfg(not(any(feature = "vosk", feature = "whisper")))]
-            panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.");
-        }
+        "whisper" => Ok(Box::new(crate::asr::whisper_backend::WhisperEngine::new(sample_rate))),
+        #[cfg(not(feature = "whisper"))]
+        "whisper" => anyhow::bail!("Whisper backend not compiled (enable 'whisper' feature)"),
+        _ => anyhow::bail!("Unknown ASR engine '{engine_name}'"),
     }
 }

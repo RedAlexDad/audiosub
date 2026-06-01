@@ -42,10 +42,8 @@ jobs:
         include:
           - label: minimal
             args: --no-default-features
-          - label: default (vosk+tui)
+          - label: default
             args: ""
-          - label: whisper+tui
-            args: --no-default-features --features whisper,tui
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -67,12 +65,8 @@ jobs:
         include:
           - label: minimal
             args: --no-default-features
-          - label: default (vosk+tui)
+          - label: default
             args: ""
-          - label: whisper+tui
-            args: --no-default-features --features whisper,tui
-          - label: all engines
-            args: --features vosk,whisper,tui
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -80,17 +74,6 @@ jobs:
         run: >
           sudo apt-get update -qq &&
           sudo apt-get install -y -qq libpulse-dev
-      - name: Download Vosk SDK
-        if: ${{ contains(matrix.args, 'vosk') }}
-        run: |
-          curl -sL -o /tmp/vosk.zip \
-            https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip
-          unzip -q /tmp/vosk.zip -d /tmp/vosk
-          find /tmp/vosk -name 'libvosk.so' -exec sh -c '
-            sudo cp "$1" /usr/local/lib/
-          ' _ {} \;
-          sudo ldconfig
-          rm -rf /tmp/vosk.zip /tmp/vosk
       - name: Cargo check
         run: cargo check ${{ matrix.args }}
 

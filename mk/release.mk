@@ -2,29 +2,15 @@
 # audiosub — release-сборки
 # ──────────────────────────────────────────────────────────────
 
-.PHONY: release release-whisper release-both release-linux release-win release-mac
+.PHONY: release release-linux release-win release-mac
 
 release:
 	@echo "$(CYAN)→ Building $(APP_NAME) (release)...$(NC)"
-	cargo build --release
+	WHISPER_DONT_GENERATE_BINDINGS=1 cargo build --release
 	mkdir -p release
 	cp target/release/audiosub release/audiosub
-	@echo "$(GREEN)✓ Release build complete — release/audiosub$(NC)"
-
-release-whisper:
-	@echo "$(CYAN)→ Building $(APP_NAME) (release, whisper backend)...$(NC)"
-	WHISPER_DONT_GENERATE_BINDINGS=1 cargo build --release --no-default-features --features whisper,tui
-	mkdir -p release
-	cp target/release/audiosub release/audiosub-whisper
-	@echo "$(GREEN)✓ Release build complete — release/audiosub-whisper$(NC)"
-
-release-both:
-	@echo "$(CYAN)→ Building $(APP_NAME) (release, vosk + whisper)...$(NC)"
-	WHISPER_DONT_GENERATE_BINDINGS=1 cargo build --release --features "vosk,whisper,tui"
-	mkdir -p release
-	cp target/release/audiosub release/audiosub-both
-	@echo "$(GREEN)✓ Release build complete — release/audiosub-both$(NC)"
-	@echo "$(YELLOW)  Set engine=\"vosk\" or engine=\"whisper\" in audiosub.toml to switch$(NC)"
+	@echo "$(GREEN)✓ Release build complete — release/audiosub ($(YELLOW)whisper + vosk runtime$(GREEN))$(NC)"
+	@echo "$(YELLOW)  Vosk requires libvosk.so, whisper works out of the box$(NC)"
 
 release-linux: release
 

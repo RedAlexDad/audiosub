@@ -6,19 +6,14 @@ ENGINE ?= vosk
 COMPOSE ?= docker compose
 DOCKER_IMAGE ?= audiosub
 
-lib/vosk/libvosk.so:
-	@mkdir -p lib/vosk
-	cp /home/redalexdad/.local/lib/libvosk.so lib/vosk/libvosk.so
-
 # ── Build ────────────────────────────────────────────────────
 
-docker-build: | lib/vosk/libvosk.so
+docker-build:
 	@echo "$(CYAN)→ Build image (ENGINE=$(ENGINE))...$(NC)"
-	ENGINE=$(ENGINE) DOCKER_BUILDKIT=0 docker build \
-		--network host \
+	ENGINE=$(ENGINE) docker build \
 		--build-arg ENGINE=$(ENGINE) \
 		-t $(DOCKER_IMAGE):$(ENGINE) .
-	@echo "$(GREEN)✓ Image: $(DOCKER_IMAGE):$(ENGINE)$(NC)"
+	@echo "$(GREEN)✓ Image: $(DOCKER_IMAGE):$(ENGINE) (whisper + $(YELLOW)vosk runtime$(GREEN))$(NC)"
 
 docker-rebuild:
 	@echo "$(CYAN)→ Rebuild (no cache, ENGINE=$(ENGINE))...$(NC)"
@@ -57,9 +52,7 @@ docker-run: docker-build
 	@echo "$(CYAN)→ Starting TUI...$(NC)"
 	ENGINE=$(ENGINE) USER_ID=$(shell id -u) GROUP_ID=$(shell id -g) \
 		$(COMPOSE) run --rm --service-ports \
-		audiosub \
-		--model /app/models/vosk-model-small-ru-0.22 \
-		--output /tmp/subtitles.srt
+		audiosub
 
 # ── Logs ─────────────────────────────────────────────────────
 

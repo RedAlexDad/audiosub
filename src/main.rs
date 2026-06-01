@@ -65,7 +65,7 @@ fn main() -> Result<()> {
 
         let effective = session::resolve_engine(engine_name);
         let model_path = session::model::resolve_model_path(&effective, args.model.as_ref(), &cfg.asr);
-        let mut engine = session::create_engine(&effective, 16000.0);
+        let mut engine = session::create_engine(&effective, 16000.0)?;
         engine.load_model(&model_path)?;
         tracing::info!(
             "ASR engine '{engine}' loaded model from: {model_path}",

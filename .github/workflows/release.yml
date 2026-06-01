@@ -26,31 +26,13 @@ jobs:
         run: >
           sudo apt-get update -qq &&
           sudo apt-get install -y -qq libpulse-dev clang
-      - name: Build whisper-only (no Vosk needed)
+      - name: Build release
         env:
           RUST_BACKTRACE: 1
-        run: |
-          cargo build --release --no-default-features --features whisper,tui
-          mkdir -p dist
-          cp target/release/audiosub dist/audiosub-whisper
-      - name: Install Vosk SDK
-        run: |
-          curl -sL -o /tmp/vosk.zip \
-            https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip
-          unzip -q /tmp/vosk.zip -d /tmp/vosk
-          find /tmp/vosk -name 'libvosk.so' -exec sh -c '
-            sudo cp "$1" /usr/local/lib/
-          ' _ {} \;
-          sudo ldconfig
-          rm -rf /tmp/vosk.zip /tmp/vosk
-      - name: Build release (vosk+whisper+tui)
-        env:
-          RUST_BACKTRACE: 1
-          LIBRARY_PATH: /usr/local/lib
-          RUSTFLAGS: -L /usr/local/lib
-        run: cargo build --release --features vosk,whisper,tui
+        run: cargo build --release --features whisper,tui
       - name: Pack binary
         run: |
+          mkdir -p dist
           cp target/release/audiosub dist/audiosub
           cp target/release/audiosub "dist/audiosub-${{ github.ref_name }}-linux-amd64"
       - name: Upload artifact

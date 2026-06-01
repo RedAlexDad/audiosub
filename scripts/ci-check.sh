@@ -43,17 +43,11 @@ FAILED=$((FAILED + $?))
 run_step "clippy (default)" cargo clippy -- -D warnings
 FAILED=$((FAILED + $?))
 
-run_step "clippy (whisper+tui)" cargo clippy --no-default-features --features whisper,tui -- -D warnings
-FAILED=$((FAILED + $?))
-
 # ── Check (matrix) ──────────────────────────
 run_step "check (minimal)" cargo check --no-default-features
 FAILED=$((FAILED + $?))
 
 run_step "check (default)" cargo check
-FAILED=$((FAILED + $?))
-
-run_step "check (whisper+tui)" cargo check --no-default-features --features whisper,tui
 FAILED=$((FAILED + $?))
 
 # ── Tests ──────────────────────────────────

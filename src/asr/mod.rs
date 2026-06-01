@@ -16,7 +16,7 @@ pub trait AsrEngine: Send {
     fn reset(&mut self) -> Result<()>;
 }
 
-#[cfg(feature = "vosk")]
 pub mod vosk_backend;
+pub mod vosk_dl;
 #[cfg(feature = "whisper")]
 pub mod whisper_backend;
