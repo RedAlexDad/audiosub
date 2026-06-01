@@ -127,11 +127,17 @@ pub fn resolve_engine(engine_name: &str) -> String {
         "whisper" => "whisper".into(),
         _ => {
             #[cfg(feature = "vosk")]
-            { "vosk".into() }
+            {
+                "vosk".into()
+            }
             #[cfg(all(feature = "whisper", not(feature = "vosk")))]
-            { "whisper".into() }
+            {
+                "whisper".into()
+            }
             #[cfg(not(any(feature = "vosk", feature = "whisper")))]
-            { panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.") }
+            {
+                panic!("No ASR backend compiled. Enable 'vosk' or 'whisper' feature.")
+            }
         }
     }
 }
