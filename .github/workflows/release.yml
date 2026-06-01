@@ -32,9 +32,9 @@ jobs:
             https://github.com/alphacep/vosk-api/releases/download/v0.3.45/vosk-linux-x86_64-0.3.45.zip
           unzip -q /tmp/vosk.zip -d /tmp/vosk
           find /tmp/vosk -name 'libvosk.so' -exec sh -c '
-            cp "$1" /usr/local/lib/
+            sudo cp "$1" /usr/local/lib/
           ' _ {} \;
-          ldconfig
+          sudo ldconfig
           rm -rf /tmp/vosk.zip /tmp/vosk
       - name: Build release (vosk+whisper+tui)
         run: |
