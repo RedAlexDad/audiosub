@@ -43,7 +43,7 @@ pub struct Cli {
 
     #[arg(
         long,
-        help = "Download ASR model: vosk, whisper, whisper:tiny, whisper:base, whisper:small (default: auto)",
+        help = "Download ASR model: vosk, whisper, whisper:tiny, whisper:base, whisper:small, whisper:medium, whisper:large, whisper:turbo (default: auto)",
         num_args = 0..=1,
         default_missing_value = "auto",
     )]

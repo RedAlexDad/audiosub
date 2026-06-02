@@ -6,6 +6,9 @@ const WHISPER_MODELS: &[(&str, &str, &str)] = &[
     ("tiny",   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",     "ggml-tiny.bin"),
     ("base",   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",     "ggml-base.bin"),
     ("small",  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",    "ggml-small.bin"),
+    ("medium", "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",   "ggml-medium.bin"),
+    ("large",  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin",    "ggml-large.bin"),
+    ("turbo",  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin", "ggml-large-v3-turbo.bin"),
 ];
 
 pub fn resolve_model_path(engine: &str, cli_path: Option<&PathBuf>, cfg: &crate::config::AsrConfig) -> String {
@@ -81,7 +84,8 @@ pub fn download_model(spec: &str, dir: &Path) -> anyhow::Result<()> {
             }
         }
         _ => anyhow::bail!(
-            "Unknown engine '{engine}'. Use: vosk, whisper, vosk:small-ru, whisper:tiny, whisper:base, whisper:small"
+            "Unknown engine '{engine}'. Use: vosk, whisper, vosk:small-ru, \
+             whisper:tiny, whisper:base, whisper:small, whisper:medium, whisper:large, whisper:turbo"
         ),
     }
 }
@@ -107,6 +111,9 @@ fn download_whisper(variant: &str, dir: &Path) -> anyhow::Result<()> {
         "tiny" => "~75 MB",
         "base" => "~150 MB",
         "small" => "~500 MB",
+        "medium" => "~1.5 GB",
+        "large" => "~3 GB",
+        "turbo" => "~1.5 GB",
         _ => "",
     };
     println!("Downloading Whisper {variant} model ({size})...");
