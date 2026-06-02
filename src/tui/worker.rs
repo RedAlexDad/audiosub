@@ -13,7 +13,7 @@ use ratatui::Terminal;
 use ratatui::prelude::CrosstermBackend;
 
 use crate::asr::{AsrEngine, Segment};
-use crate::audio::{AudioResampler, PulseCapture};
+use crate::audio::{AudioResampler, DefaultCapture as AudioDevice};
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
 use crate::tui::app::TuiApp;
 use crate::tui::screen::Screen;
@@ -54,7 +54,7 @@ pub(crate) fn compute_peak(data: &[f32]) -> f32 {
 // ── Capture thread ──
 
 fn capture_thread(
-    capture: &mut PulseCapture,
+    capture: &mut AudioDevice,
     tx: mpsc::Sender<AudioData>,
     stop: Arc<AtomicBool>,
     read_chunk: usize,
@@ -260,7 +260,7 @@ fn tui_loop(
 
 #[allow(clippy::too_many_arguments)]
 pub fn run_tui(
-    mut capture: PulseCapture,
+    mut capture: AudioDevice,
     mut engine: Box<dyn AsrEngine>,
     mut output: SubtitleOutput,
     mut buffer: SubtitleBuffer,

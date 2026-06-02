@@ -72,7 +72,7 @@ fn main() -> Result<()> {
 
     #[cfg(feature = "tui")]
     {
-        let mut capture = audiosub::audio::PulseCapture::new(&device, cfg.audio.sample_rate);
+        let mut capture = audiosub::audio::DefaultCapture::new(&device, cfg.audio.sample_rate);
         capture.start()?;
 
         let effective = session::resolve_engine(engine_name);

@@ -6,7 +6,7 @@ use std::time::Duration;
 use anyhow::Result;
 
 use crate::asr::AsrEngine;
-use crate::audio::{AudioCapture, PulseCapture};
+use crate::audio::{AudioCapture, DefaultCapture as AudioDevice};
 use crate::cli::Cli;
 use crate::config::Config;
 use crate::subtitle::{SubtitleBuffer, SubtitleOutput};
@@ -21,7 +21,7 @@ pub fn run_session(
     duration: Duration,
     engine_name: &str,
 ) -> Result<()> {
-    let mut capture = PulseCapture::new(device, source_rate);
+    let mut capture = AudioDevice::new(device, source_rate);
     capture.start()?;
 
     let engine_rate = capture.sample_rate();

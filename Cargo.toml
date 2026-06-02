@@ -29,6 +29,7 @@ tracing-appender = "0.2"
 # Audio
 libpulse-binding = "2"
 libpulse-simple-binding = "2"
+cpal = "0.17"
 rubato = "3"
 
 # ASR
