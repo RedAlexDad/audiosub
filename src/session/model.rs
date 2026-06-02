@@ -3,12 +3,36 @@ use std::path::{Path, PathBuf};
 const VOSK_MODEL_URL: &str = "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip";
 const VOSK_MODEL_DIR: &str = "vosk-model-small-ru-0.22";
 const WHISPER_MODELS: &[(&str, &str, &str)] = &[
-    ("tiny",   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",     "ggml-tiny.bin"),
-    ("base",   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",     "ggml-base.bin"),
-    ("small",  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",    "ggml-small.bin"),
-    ("medium", "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",   "ggml-medium.bin"),
-    ("large",  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin",    "ggml-large.bin"),
-    ("turbo",  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin", "ggml-large-v3-turbo.bin"),
+    (
+        "tiny",
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
+        "ggml-tiny.bin",
+    ),
+    (
+        "base",
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
+        "ggml-base.bin",
+    ),
+    (
+        "small",
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
+        "ggml-small.bin",
+    ),
+    (
+        "medium",
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin",
+        "ggml-medium.bin",
+    ),
+    (
+        "large",
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin",
+        "ggml-large.bin",
+    ),
+    (
+        "turbo",
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin",
+        "ggml-large-v3-turbo.bin",
+    ),
 ];
 
 pub fn resolve_model_path(engine: &str, cli_path: Option<&PathBuf>, cfg: &crate::config::AsrConfig) -> String {
