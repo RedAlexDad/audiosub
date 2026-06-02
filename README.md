@@ -1,54 +1,54 @@
 # audiosub
 
-Real-time automatic subtitles for Linux. Captures system audio and generates subtitles via **Whisper** (built-in) or **Vosk** (runtime).
+Автоматические субтитры в реальном времени для Linux. Захватывает аудио системы и генерирует субтитры через **Whisper** (встроен) или **Vosk** (runtime).
 
-## Quick start
+## Быстрый старт
 
 ```bash
-# Download the binary and a model
+# Скачать бинарник и модель
 curl -sL https://github.com/RedAlexDad/audiosub/releases/latest/download/audiosub -o audiosub
 chmod +x audiosub
 ./audiosub --download-model whisper:tiny
 
-# Run — it auto-detects the model and starts
+# Запуск — сам находит модель и устройство
 ./audiosub
 ```
 
-## Features
+## Возможности
 
-- **Two ASR engines**: Whisper (built-in, portable) and Vosk (runtime via libvosk.so)
-- **No config required**: auto-detects model files, audio device, and engine
-- **TUI mode**: interactive terminal interface with real-time transcription
-- **CLI mode**: headless operation for pipelines (`--no-tui`)
-- **Subtitle export**: SRT and VTT formats
-- **Docker**: ready-to-use images on [ghcr.io](https://github.com/RedAlexDad/audiosub/pkgs/container/audiosub)
-- **Auto-download models**: `--download-model` fetches models automatically
+- **Два движка ASR**: Whisper (встроен, портативный) и Vosk (runtime через libvosk.so)
+- **Без конфига**: автодетект модели, аудиоустройства и движка
+- **TUI**: интерактивный терминальный интерфейс
+- **CLI**: консольный режим для пайплайнов (`--no-tui`)
+- **Субтитры**: экспорт в SRT и VTT
+- **Docker**: готовые образы на [ghcr.io](https://github.com/RedAlexDad/audiosub/pkgs/container/audiosub)
+- **Авто-загрузка моделей**: `--download-model`
 
-## Documentation
+## Документация
 
-| Topic | Link |
-|-------|------|
-| Installation | [docs/installation.md](docs/installation.md) |
-| Usage (CLI + TUI) | [docs/usage.md](docs/usage.md) |
-| Models | [docs/models.md](docs/models.md) |
+| Раздел | Ссылка |
+|--------|--------|
+| Установка | [docs/installation.md](docs/installation.md) |
+| Использование | [docs/usage.md](docs/usage.md) |
+| Модели | [docs/models.md](docs/models.md) |
 | Docker | [docs/docker.md](docs/docker.md) |
-| Building from source | [docs/build.md](docs/build.md) |
+| Сборка из исходников | [docs/build.md](docs/build.md) |
 
-## Quick reference
+## Быстрая справка
 
 ```bash
-audiosub                        # TUI mode (whisper, auto model)
-audiosub --engine vosk          # Use Vosk engine
-audiosub --no-tui --duration 30 # CLI mode, 30 seconds
-audiosub --list-devices         # Show audio sources
-audiosub --download-model       # Download model (auto)
-audiosub --download-model whisper:base  # Specific model
-audiosub --help                 # Full help
+audiosub                        # TUI (whisper, авто-модель)
+audiosub --engine vosk          # Vosk engine
+audiosub --no-tui --duration 30 # CLI, 30 секунд
+audiosub --list-devices         # Список аудиоисточников
+audiosub --download-model       # Скачать модель (авто)
+audiosub --download-model whisper:base  # Конкретная модель
+audiosub --help                 # Полная справка
 ```
 
-## Configuration
+## Конфиг (опционально)
 
-Optional `audiosub.toml` in the current directory:
+`audiosub.toml` в текущей директории:
 
 ```toml
 [audio]
@@ -61,8 +61,8 @@ model_path_whisper = "ggml-base.bin"
 model_path_vosk = "vosk-model-small-ru-0.22"
 ```
 
-See [docs/usage.md#configuration](docs/usage.md#configuration) for details.
+Подробнее в [docs/usage.md#конфигурация](docs/usage.md#конфигурация).
 
-## License
+## Лицензия
 
 MIT

@@ -1,65 +1,66 @@
-# Models
+# Модели
 
-audiosub supports two ASR engines, each with its own model format.
+audiosub поддерживает два движка ASR, каждый со своим форматом моделей.
 
-## Auto-detection
+## Авто-детект
 
-On startup, audiosub scans for model files in:
+При запуске audiosub ищет файлы моделей в:
 
-1. The **binary's directory** (where `audiosub` is located)
-2. The **current working directory**
+1. **Директория бинарника** (где лежит `audiosub`)
+2. **Текущая рабочая директория**
 
-Supported file patterns:
-- `*.gguf`, `*.bin`, `*.ggml` — Whisper models
-- `*vosk*` directory — Vosk model directory
+Поддерживаемые типы файлов:
+- `*.gguf`, `*.bin`, `*.ggml` — модели Whisper
+- `*vosk*` (директория) — модель Vosk
 
-Priority: **Vosk model directory > first alphabetically** (so `ggml-base.bin` is preferred over `ggml-tiny.bin`).
+Приоритет: **Vosk директория > первый по алфавиту** (например `ggml-base.bin` выберется раньше `ggml-tiny.bin`).
 
-## Download models
+## Скачать модели
 
 ```bash
-# Auto-select (Vosk if libvosk.so present, else Whisper tiny)
+# Авто-выбор (Vosk если есть libvosk.so, иначе Whisper tiny)
 audiosub --download-model
 
-# Vosk (Russian, ~42 MB)
+# Vosk (русский, ~42 MB)
 audiosub --download-model vosk
 audiosub --download-model vosk:small-ru
 
-# Whisper variants (download from HuggingFace)
+# Whisper варианты (скачиваются с HuggingFace)
 audiosub --download-model whisper:tiny     # ~75 MB
 audiosub --download-model whisper:base     # ~150 MB
 audiosub --download-model whisper:small    # ~500 MB
 audiosub --download-model whisper:medium   # ~1.5 GB
 audiosub --download-model whisper:large    # ~3 GB
-audiosub --download-model whisper:turbo    # ~1.5 GB (fast)
+audiosub --download-model whisper:turbo    # ~1.5 GB (быстрый)
 ```
 
-Models are downloaded to the **current directory**.
+Модели скачиваются в **текущую директорию**.
 
-## Manual model setup
+## Ручная установка
 
 ### Whisper
 
-Download from [HuggingFace 🤗](https://huggingface.co/ggerganov/whisper.cpp/tree/main):
+Скачать с [HuggingFace](https://huggingface.co/ggerganov/whisper.cpp/tree/main):
 
 ```bash
 curl -sL -o ggml-base.bin \
   https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
 ```
 
-Whisper model files:
-| Model | Size | Quality | Speed |
-|-------|------|---------|-------|
-| tiny | ~75 MB | lowest | fastest |
-| base | ~150 MB | low | fast |
-| small | ~500 MB | medium | medium |
-| medium | ~1.5 GB | high | slow |
-| large | ~3 GB | highest | slowest |
-| turbo | ~1.5 GB | high (large-v3) | fast |
+Таблица моделей Whisper:
+
+| Модель | Размер | Качество | Скорость |
+|--------|--------|----------|----------|
+| tiny | ~75 MB | низкое | быстрая |
+| base | ~150 MB | низкое | быстрая |
+| small | ~500 MB | среднее | средняя |
+| medium | ~1.5 GB | высокое | медленная |
+| large | ~3 GB | высочайшее | медленная |
+| turbo | ~1.5 GB | высокое (large-v3) | быстрая |
 
 ### Vosk
 
-Download from [alphacephei.com](https://alphacephei.com/vosk/models):
+Скачать с [alphacephei.com](https://alphacephei.com/vosk/models):
 
 ```bash
 curl -sL -o /tmp/vosk.zip \
@@ -67,11 +68,11 @@ curl -sL -o /tmp/vosk.zip \
 unzip -q /tmp/vosk.zip -d /path/to/models
 ```
 
-Vosk models available at [alphacephei.com/vosk/models](https://alphacephei.com/vosk/models).
+Все доступные модели: [alphacephei.com/vosk/models](https://alphacephei.com/vosk/models)
 
-## Engine-specific config
+## Раздельные пути для движков
 
-Set different model paths for each engine in `audiosub.toml`:
+Можно указать разные пути для каждого движка в `audiosub.toml`:
 
 ```toml
 [asr]
@@ -79,15 +80,15 @@ model_path_vosk = "models/vosk-model-small-ru-0.22"
 model_path_whisper = "models/ggml-base.bin"
 ```
 
-The correct path is selected automatically based on the active engine.
+Нужный путь выбирается автоматически по активному движку.
 
-## How model resolution works
+## Как работает поиск модели
 
-Priority chain:
+Цепочка приоритетов:
 
-1. `--model` CLI flag
-2. `model_path_vosk` / `model_path_whisper` in config
-3. `model_path` in config (fallback)
-4. Auto-detection (binary dir → CWD)
-5. `~/.cache/audiosub/models/vosk-model-small-en-us-0.15` (hard default)
-6. Error with download suggestion
+1. `--model` (CLI флаг)
+2. `model_path_vosk` / `model_path_whisper` в конфиге
+3. `model_path` в конфиге (общий)
+4. Авто-детект (директория бинарника → CWD)
+5. `~/.cache/audiosub/models/vosk-model-small-en-us-0.15` (жёсткий дефолт)
+6. Ошибка с предложением скачать модель (`--download-model`)

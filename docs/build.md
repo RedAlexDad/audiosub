@@ -1,100 +1,100 @@
-# Building from source
+# Сборка из исходников
 
-## Prerequisites
+## Зависимости
 
 ```bash
-# Rust toolchain (see rust-toolchain.toml for pinned version)
+# Rust (см. rust-toolchain.toml для версии)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# System dependencies
+# Системные пакеты
 sudo apt install libpulse-dev cmake clang
 ```
 
-## Build
+## Сборка
 
 ```bash
-# Clone
+# Клонировать
 git clone https://github.com/RedAlexDad/audiosub.git
 cd audiosub
 
-# Build (release, whisper + vosk runtime)
+# Собрать (release, whisper + vosk runtime)
 make release
-# Binary at: release/audiosub
+# Бинарник: release/audiosub
 
-# Or via cargo directly
+# Или напрямую через cargo
 cargo build --release
 ```
 
-## Feature flags
+## Флаги сборки
 
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `whisper` | yes | Whisper.cpp backend (compile-time) |
-| `tui` | yes | Terminal UI (ratatui + crossterm) |
+| Флаг | По умолч. | Описание |
+|------|-----------|----------|
+| `whisper` | да | Whisper.cpp бэкенд (compile-time) |
+| `tui` | да | Терминальный интерфейс (ratatui + crossterm) |
 
-Vosk is **not a feature** — it's loaded at runtime via `libloading` if `libvosk.so` is present.
+Vosk **не является флагом сборки** — он загружается runtime через `libloading` если есть `libvosk.so`.
 
-### Build variants
+### Варианты сборки
 
 ```bash
-# Default (whisper + tui)
+# По умолчанию (whisper + tui)
 cargo build
 
-# Minimal (no TUI, no whisper — Vosk only via runtime)
+# Минимальная (без TUI, без whisper — только Vosk runtime)
 cargo build --no-default-features
 
-# With all features (whisper + tui)
+# Все возможности (whisper + tui)
 cargo build --features whisper,tui
 ```
 
-## Build with Docker
+## Сборка в Docker
 
 ```bash
-make docker-build      # ENGINE=vosk (default, includes Vosk SDK)
-make docker-build ENGINE=whisper   # Whisper only, smaller image
+make docker-build              # ENGINE=vosk (с Vosk SDK)
+make docker-build ENGINE=whisper  # Только Whisper, меньший образ
 ```
 
-## Project structure
+## Структура проекта
 
 ```
 src/
-├── main.rs              # Entry point, CLI → TUI or session
-├── cli.rs               # CLI flags via clap
-├── config.rs            # Config loading + dynamic defaults
+├── main.rs              # Точка входа, CLI → TUI или сессия
+├── cli.rs               # Флаги командной строки (clap)
+├── config.rs            # Загрузка конфига + динамические defaults
 ├── session/
-│   ├── mod.rs           # Session orchestration + engine selection
-│   └── model.rs         # Model resolution + auto-detect + download
+│   ├── mod.rs           # Оркестрация сессии + выбор движка
+│   └── model.rs         # Поиск модели + авто-детект + загрузка
 ├── asr/
 │   ├── mod.rs           # AsrEngine trait
-│   ├── vosk_dl.rs       # Vosk runtime loader (libloading)
-│   ├── vosk_backend.rs  # Vosk engine implementation
+│   ├── vosk_dl.rs       # Vosk runtime загрузчик (libloading)
+│   ├── vosk_backend.rs  # Vosk engine реализация
 │   └── whisper_backend.rs
 ├── audio/
 │   ├── mod.rs
-│   ├── pulse.rs         # PulseAudio capture
-│   └── monitor.rs       # Device auto-detection
+│   ├── pulse.rs         # Захват аудио через PulseAudio
+│   └── monitor.rs       # Авто-детект устройств
 ├── subtitle/
 │   ├── mod.rs
-│   ├── buffer.rs        # Subtitle buffer with overlap merge
-│   ├── split.rs         # Segment splitting
+│   ├── buffer.rs        # Буфер субтитров с объединением
+│   ├── split.rs         # Разбивка сегментов
 │   ├── srt.rs           # SRT writer
 │   └── vtt.rs           # VTT writer
 └── tui/
-    ├── worker.rs        # 3-thread orchestration
-    ├── app.rs           # TuiApp state
-    ├── event.rs         # Input handling
-    ├── screen.rs        # Screen enum
-    └── view/            # Renderers (top, recognition, segments, logs)
+    ├── worker.rs        # 3-поточная оркестрация
+    ├── app.rs           # Состояние TuiApp
+    ├── event.rs         # Обработка ввода
+    ├── screen.rs        # Enum экранов
+    └── view/            # Отрисовка (шапка, recognition, сегменты, логи)
 ```
 
-## Architecture
+## Архитектура
 
 ```
-Capture thread → mpsc[AudioData] → ASR thread → mpsc[UiUpdate] → TUI thread
+Поток захвата → mpsc[AudioData] → Поток ASR → mpsc[UiUpdate] → Поток TUI
       ↕ ↕ ↕ Arc<AtomicBool> (stop/pause/reset) ↕ ↕ ↕
 ```
 
-## Verify
+## Проверка
 
 ```bash
 make verify   # test → check → clippy → fmt

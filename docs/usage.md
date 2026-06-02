@@ -1,73 +1,70 @@
-# Usage
+# Использование
 
-## TUI mode (default)
+## TUI (по умолчанию)
 
 ```bash
 audiosub
 ```
 
-Starts the terminal interface with:
+Интерфейс:
 
-- **Header**: engine name + model, status, segment count, elapsed time, VU meter
-- **Recognition tab** (default): real-time partial transcription
-- **Segments tab**: finalized subtitle segments
-- **Logs tab**: debug logs
+- **Шапка**: имя движка + модель, статус, счётчик сегментов, время, VU-метр
+- **Recognition** (по умолчанию): распознавание в реальном времени
+- **Segments** : готовые сегменты субтитров
+- **Logs** : отладочные логи
 
-### TUI controls
+### Управление в TUI
 
-| Key | Action |
-|-----|--------|
-| `q` / `Esc` | Quit |
-| `Tab` / `Shift+Tab` | Next/previous screen |
-| `p` | Pause/resume recognition |
-| `r` | Reset session |
-| `s` | Export SRT |
-| `S` | Export TXT |
-| `↑` / `↓` | Scroll segments |
-| `PgUp` / `PgDown` | Page scroll |
-| `Home` / `End` | Top/bottom |
-| `c` | Clear segments (Segments tab) |
-| `R` | Refresh logs (Logs tab) |
+| Клавиша | Действие |
+|---------|----------|
+| `q` / `Esc` | Выход |
+| `Tab` / `Shift+Tab` | Следующий/предыдущий экран |
+| `p` | Пауза/продолжить |
+| `r` | Сброс сессии |
+| `s` | Экспорт SRT |
+| `S` | Экспорт TXT |
+| `↑` / `↓` | Скролл сегментов |
+| `PgUp` / `PgDown` | Скролл страницами |
+| `Home` / `End` | Начало/конец |
+| `c` | Очистить сегменты (Segments) |
+| `R` | Обновить логи (Logs) |
 
-## CLI mode
+## CLI режим
 
 ```bash
 audiosub --no-tui --duration 60
 ```
 
-| Flag | Description |
-|------|-------------|
-| `-d, --duration <sec>` | Recording duration (default: unlimited) |
-| `--no-tui` | Disable TUI, plain console mode |
-| `-o, --output <path>` | Output subtitle file |
-| `--format <srt\|vtt>` | Subtitle format (default: srt) |
-| `--list-devices` | List available audio sources |
-| `-m, --model <path>` | Override model path |
-| `--engine <vosk\|whisper>` | Select ASR engine |
+| Флаг | Описание |
+|------|----------|
+| `-d, --duration <сек>` | Длительность записи (по умолчанию: безлимит) |
+| `--no-tui` | Без TUI, консольный режим |
+| `-o, --output <путь>` | Файл для субтитров |
+| `--format <srt\|vtt>` | Формат субтитров |
+| `--list-devices` | Список аудиоисточников |
+| `-m, --model <путь>` | Путь к модели |
+| `--engine <vosk\|whisper>` | Выбор движка ASR |
 
-## Engine selection
+## Выбор движка
 
-Priority (highest to lowest):
+Приоритет (от высшего к низшему):
 
-1. `--engine` CLI flag
-2. `AUDIOSUB_ENGINE` environment variable
-3. `engine` in `audiosub.toml`
-4. Auto-detection based on available model files
+1. `--engine` (CLI флаг)
+2. `AUDIOSUB_ENGINE` (переменная окружения)
+3. `engine` в `audiosub.toml`
+4. Авто-детект по найденным файлам моделей
 
-### Example
+### Примеры
 
 ```bash
-# Explicit engine
 audiosub --engine vosk
 audiosub --engine whisper
-
-# Env var
 AUDIOSUB_ENGINE=whisper audiosub
 ```
 
-## Configuration
+## Конфигурация
 
-Optional `audiosub.toml` in the current directory or `~/.cache/audiosub/`:
+Опциональный `audiosub.toml` в текущей директории или `~/.cache/audiosub/`:
 
 ```toml
 [audio]
@@ -89,19 +86,19 @@ buffer_ms = 2000
 max_duration_ms = 5000
 ```
 
-Without a config file, defaults are auto-detected:
-- **Audio device**: PulseAudio default monitor source
-- **Engine**: based on available model files
-- **Model path**: auto-scanned in binary directory and CWD
+Без конфига используются авто-детект:
+- **Аудиоустройство**: монитор PulseAudio по умолчанию
+- **Движок**: по типу найденной модели
+- **Модель**: сканируется директория бинарника и CWD
 
-## Audio device detection
+## Аудиоустройства
 
 ```bash
-# List available monitor sources
+# Список доступных источников
 audiosub --list-devices
 
-# Explicit device
+# Явное указание устройства
 audiosub --device alsa_output.pci-0000_00_1f.3.analog-stereo.monitor
 ```
 
-See [models.md](models.md) for model management.
+Подробнее про модели — в [models.md](models.md).

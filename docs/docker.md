@@ -1,20 +1,20 @@
 # Docker
 
-audiosub is available as a Docker image on [GitHub Container Registry](https://github.com/RedAlexDad/audiosub/pkgs/container/audiosub).
+Образ audiosub доступен на [GitHub Container Registry](https://github.com/RedAlexDad/audiosub/pkgs/container/audiosub).
 
-## Quick start
+## Быстрый старт
 
 ```bash
-# Run with Whisper
+# Запуск с Whisper
 docker run --rm ghcr.io/redalexdad/audiosub:latest --help
 
-# Run with Vosk (includes libvosk.so in the image)
+# Запуск с Vosk (libvosk.so уже установлен в образе)
 docker run --rm ghcr.io/redalexdad/audiosub:latest --engine vosk --help
 ```
 
-## TUI mode
+## TUI режим
 
-For interactive TUI mode, you need PulseAudio passthrough:
+Для интерактивного TUI нужен PulseAudio:
 
 ```bash
 docker run --rm -it \
@@ -24,7 +24,7 @@ docker run --rm -it \
   ghcr.io/redalexdad/audiosub:latest
 ```
 
-## CLI mode with audio capture
+## CLI с захватом аудио
 
 ```bash
 docker run --rm \
@@ -34,27 +34,27 @@ docker run --rm \
   --no-tui --duration 30
 ```
 
-## Building locally
+## Сборка локально
 
 ```bash
-# Build with Vosk SDK (runtime) + Whisper
+# С Vosk SDK (runtime) + Whisper
 docker build --build-arg ENGINE=vosk -t audiosub .
 
-# Build without Vosk (smaller image)
+# Без Vosk (меньший образ)
 docker build --build-arg ENGINE=whisper -t audiosub .
 
-# Run
+# Запуск
 docker run --rm audiosub --help
 ```
 
-## Image variants
+## Варианты образа
 
-The Docker image supports three `ENGINE` build args:
+Поддерживаемые `ENGINE` аргументы:
 
-| ENGINE | libvosk.so | Whisper | Binary size |
-|--------|-----------|---------|-------------|
-| `whisper` | No | Yes | ~50 MB |
-| `vosk` | Yes | Yes | ~60 MB |
-| `both` | Yes | Yes | ~60 MB |
+| ENGINE | libvosk.so | Whisper | Размер |
+|--------|-----------|---------|--------|
+| `whisper` | Нет | Да | ~50 MB |
+| `vosk` | Да | Да | ~60 MB |
+| `both` | Да | Да | ~60 MB |
 
-The default is `vosk` (both engines available at runtime).
+По умолчанию `vosk` (оба движка доступны в runtime).

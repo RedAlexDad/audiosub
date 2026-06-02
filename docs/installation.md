@@ -1,29 +1,29 @@
-# Installation
+# Установка
 
-## From GitHub Releases (recommended)
+## Из GitHub Releases (рекомендуется)
 
-Download the latest binary from the [releases page](https://github.com/RedAlexDad/audiosub/releases):
+Скачать последний бинарник со [страницы релизов](https://github.com/RedAlexDad/audiosub/releases):
 
 ```bash
-# Download
+# Скачать
 curl -sL https://github.com/RedAlexDad/audiosub/releases/latest/download/audiosub -o audiosub
 chmod +x audiosub
 
-# (Optional) install system-wide
+# (Опционально) установить системно
 sudo mv audiosub /usr/local/bin/
 ```
 
-This binary includes **both engines**: Whisper is built-in, Vosk is loaded at runtime if `libvosk.so` is present.
+Бинарник включает **оба движка**: Whisper встроен, Vosk загружается runtime если есть `libvosk.so`.
 
-### System requirements
+### Требования
 
 - **Linux** (x86_64)
-- **PulseAudio** — for audio capture (usually pre-installed on desktop Linux)
-- **libpulse0** — PulseAudio client library (pre-installed on most distros)
+- **PulseAudio** — для захвата аудио (обычно уже установлен)
+- **libpulse0** — клиентская библиотека PulseAudio
 
-### Optional: Vosk SDK
+### Опционально: Vosk SDK
 
-If you want to use the Vosk engine, download and install `libvosk.so`:
+Для использования движка Vosk:
 
 ```bash
 curl -sL -o /tmp/vosk.zip \
@@ -33,12 +33,12 @@ sudo cp /tmp/vosk/libvosk.so /usr/local/lib/
 sudo ldconfig
 ```
 
-Then `audiosub --engine vosk` will work.
+После этого `audiosub --engine vosk` будет работать.
 
-## Via Docker
+## Через Docker
 
-See [docker.md](docker.md).
+См. [docker.md](docker.md).
 
-## Building from source
+## Сборка из исходников
 
-See [build.md](build.md).
+См. [build.md](build.md).
