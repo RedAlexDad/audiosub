@@ -79,7 +79,10 @@ fn download_vosk(dir: &Path) -> anyhow::Result<()> {
     duct::cmd!("unzip", "-qo", &zip_path, "-d", dir).run()?;
     std::fs::remove_file(&zip_path)?;
     println!("✓ Vosk model downloaded to {}", dir.join(VOSK_MODEL_DIR).display());
-    println!("  Set engine=\"vosk\" and model_path=\"{}\" in audiosub.toml", VOSK_MODEL_DIR);
+    println!(
+        "  Set engine=\"vosk\" and model_path=\"{}\" in audiosub.toml",
+        VOSK_MODEL_DIR
+    );
     Ok(())
 }
 
