@@ -52,7 +52,7 @@ jobs:
       - name: Install system deps
         run: >
           sudo apt-get update -qq &&
-          sudo apt-get install -y -qq libpulse-dev
+          sudo apt-get install -y -qq libpulse-dev libasound2-dev
       - name: Clippy
         run: cargo clippy ${{ matrix.args }} -- -D warnings
 
@@ -73,7 +73,7 @@ jobs:
       - name: Install system deps
         run: >
           sudo apt-get update -qq &&
-          sudo apt-get install -y -qq libpulse-dev
+          sudo apt-get install -y -qq libpulse-dev libasound2-dev
       - name: Cargo check
         run: cargo check ${{ matrix.args }}
 
@@ -86,7 +86,7 @@ jobs:
       - name: Install system deps
         run: >
           sudo apt-get update -qq &&
-          sudo apt-get install -y -qq libpulse-dev
+          sudo apt-get install -y -qq libpulse-dev libasound2-dev
       - name: cargo test
         run: cargo test --no-default-features
 

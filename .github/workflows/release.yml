@@ -25,7 +25,7 @@ jobs:
       - name: Install system deps
         run: >
           sudo apt-get update -qq &&
-          sudo apt-get install -y -qq libpulse-dev clang
+          sudo apt-get install -y -qq libpulse-dev libasound2-dev clang
       - name: Build release
         env:
           RUST_BACKTRACE: 1

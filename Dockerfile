@@ -9,6 +9,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     libpulse-dev \
+    libasound2-dev \
     pkg-config \
     curl \
     unzip \
