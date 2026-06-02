@@ -43,12 +43,18 @@ fn main() -> Result<()> {
         .clone()
         .or_else(|| {
             if cfg.audio.device == "default" {
-                audiosub::audio::find_default_monitor().ok()
+                let mon = audiosub::audio::find_default_monitor().or_else(|_| {
+                    audiosub::audio::list_sources().map(|s| s.into_iter().next().unwrap_or_else(|| "default".into()))
+                });
+                mon.ok()
             } else {
                 Some(cfg.audio.device.clone())
             }
         })
         .unwrap_or_else(|| "default".into());
+    if device == "default" {
+        tracing::warn!("No PulseAudio monitor source found. Use --list-devices to see available sources.");
+    }
 
     let duration = Duration::from_secs(args.duration.unwrap_or(u64::MAX));
     #[cfg(feature = "tui")]
@@ -65,6 +71,12 @@ fn main() -> Result<()> {
 
         let effective = session::resolve_engine(engine_name);
         let model_path = session::model::resolve_model_path(&effective, args.model.as_ref(), &cfg.asr);
+        if model_path.is_empty() {
+            anyhow::bail!(
+                "No model found. Place a .gguf or .bin model next to the binary, \
+                 use --model <path>, or run `audiosub --download-model`"
+            );
+        }
         let mut engine = session::create_engine(&effective, 16000.0)?;
         engine.load_model(&model_path)?;
         tracing::info!(

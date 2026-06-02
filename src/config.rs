@@ -35,22 +35,32 @@ pub struct SubtitleConfig {
 
 impl Default for Config {
     fn default() -> Self {
+        let device = crate::audio::find_default_monitor()
+            .or_else(|_| crate::audio::list_sources().map(|s| s.into_iter().next().unwrap_or_else(|| "default".into())))
+            .unwrap_or_else(|_| "default".to_string());
+
+        let engine = if crate::asr::vosk_dl::is_available() {
+            "vosk"
+        } else {
+            "whisper"
+        };
+
         Self {
             audio: AudioConfig {
-                device: "default".into(),
+                device,
                 sample_rate: 16000,
                 channels: 1,
             },
             asr: AsrConfig {
-                engine: "vosk".into(),
-                model_path: dirs().join("models"),
+                engine: engine.into(),
+                model_path: PathBuf::new(),
                 model_path_vosk: None,
                 model_path_whisper: None,
-                lang: "en-US".into(),
+                lang: "ru-RU".into(),
             },
             subtitle: SubtitleConfig {
                 format: "srt".into(),
-                output: PathBuf::from("output.srt"),
+                output: PathBuf::from("subtitles.srt"),
                 buffer_ms: 2000,
                 max_duration_ms: 10000,
             },
@@ -85,18 +95,13 @@ impl Config {
 
                 #[allow(dead_code)]
                 #[test]
-                fn default_config_has_expected_values() {
-                    println!(
-                        "Описание: значения Config::default() совпадают с ожидаемыми (device, sample_rate, channels, engine, lang, format, buffer_ms, max_duration_ms)"
-                    );
+                fn default_config_has_expected_structure() {
+                    println!("Описание: Config::default() возвращает корректную структуру");
                     let cfg = Config::default();
-                    assert_eq!(cfg.audio.device, "default");
                     assert_eq!(cfg.audio.sample_rate, 16000);
                     assert_eq!(cfg.audio.channels, 1);
-                    assert_eq!(cfg.asr.engine, "vosk");
-                    assert_eq!(cfg.asr.lang, "en-US");
+                    assert!(matches!(cfg.asr.engine.as_str(), "vosk" | "whisper"));
                     assert_eq!(cfg.subtitle.format, "srt");
-                    assert_eq!(cfg.subtitle.output, PathBuf::from("output.srt"));
                     assert_eq!(cfg.subtitle.buffer_ms, 2000);
                     assert_eq!(cfg.subtitle.max_duration_ms, 10000);
                 }

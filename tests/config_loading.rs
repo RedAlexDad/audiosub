@@ -52,8 +52,8 @@ fn config_load_nonexistent_path_returns_default() {
 #[test]
 fn config_default_matches_expected_sentinel_values() {
     let cfg = Config::default();
-    assert_eq!(cfg.audio.device, "default");
-    assert_eq!(cfg.asr.engine, "vosk");
+    assert!(!cfg.audio.device.is_empty());
+    assert!(matches!(cfg.asr.engine.as_str(), "vosk" | "whisper"));
     assert_eq!(cfg.subtitle.format, "srt");
     assert_eq!(cfg.subtitle.buffer_ms, 2000);
     assert_eq!(cfg.subtitle.max_duration_ms, 10000);

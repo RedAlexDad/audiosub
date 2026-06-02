@@ -30,6 +30,12 @@ pub fn run_session(
 
     let effective = resolve_engine(engine_name);
     let model_path = resolve_model_path(&effective, args.model.as_ref(), &cfg.asr);
+    if model_path.is_empty() {
+        anyhow::bail!(
+            "No model found. Place a .gguf or .bin model next to the binary, \
+             use --model <path>, or run `audiosub --download-model`"
+        );
+    }
     let mut engine = create_engine(&effective, engine_rate as f32)?;
     engine.load_model(&model_path)?;
     tracing::info!(
