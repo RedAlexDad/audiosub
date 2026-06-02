@@ -320,7 +320,16 @@ pub fn run_tui(
     });
 
     // ── TUI loop on main thread ──
-    let result = tui_loop(tui_rx, stop, paused, reset, engine_name, model_name, target_rate, max_duration_ms);
+    let result = tui_loop(
+        tui_rx,
+        stop,
+        paused,
+        reset,
+        engine_name,
+        model_name,
+        target_rate,
+        max_duration_ms,
+    );
 
     // Stop workers and wait
     let _ = cap_handle.join();
