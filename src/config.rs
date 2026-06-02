@@ -39,11 +39,7 @@ impl Default for Config {
             .or_else(|_| crate::audio::list_sources().map(|s| s.into_iter().next().unwrap_or_else(|| "default".into())))
             .unwrap_or_else(|_| "default".to_string());
 
-        let engine = if crate::asr::vosk_dl::is_available() {
-            "vosk"
-        } else {
-            "whisper"
-        };
+        let engine = crate::session::model::detect_engine();
 
         Self {
             audio: AudioConfig {

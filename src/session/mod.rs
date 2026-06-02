@@ -130,16 +130,11 @@ pub fn resolve_engine(engine_name: &str) -> String {
         "vosk" if crate::asr::vosk_dl::is_available() => "vosk".into(),
         "whisper" => "whisper".into(),
         _ => {
-            if crate::asr::vosk_dl::is_available() {
-                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to vosk");
-                "vosk".into()
+            let detected = crate::session::model::detect_engine();
+            if detected != "whisper" || cfg!(feature = "whisper") {
+                tracing::warn!("Unknown ASR engine '{engine_name}', falling back to {detected}");
+                detected.into()
             } else {
-                #[cfg(feature = "whisper")]
-                {
-                    tracing::warn!("Unknown ASR engine '{engine_name}', falling back to whisper");
-                    "whisper".into()
-                }
-                #[cfg(not(feature = "whisper"))]
                 panic!("No ASR backend available (install libvosk.so or enable whisper feature)");
             }
         }

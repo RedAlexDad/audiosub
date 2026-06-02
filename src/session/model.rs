@@ -38,7 +38,11 @@ const WHISPER_MODELS: &[(&str, &str, &str)] = &[
 pub fn resolve_model_path(engine: &str, cli_path: Option<&PathBuf>, cfg: &crate::config::AsrConfig) -> String {
     let base = cli_path
         .cloned()
-        .or_else(|| engine_path(engine, cfg).or_else(|| Some(cfg.model_path.clone())))
+        .or_else(|| engine_path(engine, cfg))
+        .or_else(|| {
+            let p = cfg.model_path.clone();
+            if p.as_os_str().is_empty() { None } else { Some(p) }
+        })
         .or_else(auto_detect_model)
         .unwrap_or_else(|| default_model_path(engine));
     if base.as_os_str().is_empty() {
@@ -60,7 +64,7 @@ fn engine_path(engine: &str, cfg: &crate::config::AsrConfig) -> Option<PathBuf> 
     }
 }
 
-fn auto_detect_model() -> Option<PathBuf> {
+pub fn auto_detect_model() -> Option<PathBuf> {
     let from_exe = std::env::current_exe()
         .ok()
         .as_ref()
@@ -69,12 +73,31 @@ fn auto_detect_model() -> Option<PathBuf> {
     from_exe.or_else(|| std::env::current_dir().ok().and_then(|cwd| scan_for_model(&cwd)))
 }
 
+pub fn detect_engine() -> &'static str {
+    if let Some(path) = auto_detect_model() {
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        let is_whisper = name.contains("ggml") || name.contains(".gguf");
+        let is_vosk_dir = path.is_dir() || name.contains("vosk");
+        if is_vosk_dir && crate::asr::vosk_dl::is_available() {
+            return "vosk";
+        }
+        if is_whisper {
+            return "whisper";
+        }
+    }
+    if crate::asr::vosk_dl::is_available() { "vosk" } else { "whisper" }
+}
+
 fn scan_for_model(dir: &Path) -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_file() && matches!(path.extension().and_then(|e| e.to_str()), Some("gguf" | "bin" | "ggml")) {
+            let is_model_file = path.is_file()
+                && matches!(path.extension().and_then(|e| e.to_str()), Some("gguf" | "bin" | "ggml"));
+            let is_vosk_dir = path.is_dir()
+                && path.file_name().and_then(|n| n.to_str()).map_or(false, |n| n.contains("vosk"));
+            if is_model_file || is_vosk_dir {
                 candidates.push(path);
             }
         }
@@ -82,7 +105,11 @@ fn scan_for_model(dir: &Path) -> Option<PathBuf> {
     if candidates.is_empty() {
         return None;
     }
-    candidates.sort();
+    candidates.sort_by(|a, b| {
+        let a_vosk = a.is_dir();
+        let b_vosk = b.is_dir();
+        b_vosk.cmp(&a_vosk).then(a.cmp(b))
+    });
     Some(candidates[0].clone())
 }
 
