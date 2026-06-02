@@ -144,7 +144,7 @@ pub fn download_model(spec: &str, dir: &Path) -> anyhow::Result<()> {
 fn download_vosk(dir: &Path) -> anyhow::Result<()> {
     let zip_path = dir.join("vosk-model.zip");
     println!("Downloading Vosk model (Russian, ~42 MB)...");
-    duct::cmd!("curl", "-sLk", "-o", &zip_path, VOSK_MODEL_URL).run()?;
+    duct::cmd!("curl", "-Lk", "-o", &zip_path, VOSK_MODEL_URL).run()?;
     println!("Extracting...");
     duct::cmd!("unzip", "-qo", &zip_path, "-d", dir).run()?;
     std::fs::remove_file(&zip_path)?;
@@ -168,7 +168,7 @@ fn download_whisper(variant: &str, dir: &Path) -> anyhow::Result<()> {
         _ => "",
     };
     println!("Downloading Whisper {variant} model ({size})...");
-    duct::cmd!("curl", "-sL", "-o", &path, url).run()?;
+    duct::cmd!("curl", "-L", "-o", &path, url).run()?;
     println!("✓ Whisper model downloaded to {}", path.display());
     Ok(())
 }
