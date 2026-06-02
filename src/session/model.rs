@@ -1,5 +1,10 @@
 use std::path::{Path, PathBuf};
 
+const VOSK_MODEL_URL: &str = "https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip";
+const VOSK_MODEL_DIR: &str = "vosk-model-small-ru-0.22";
+const WHISPER_TINY_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin";
+const WHISPER_TINY_NAME: &str = "ggml-tiny.bin";
+
 pub fn resolve_model_path(engine: &str, cli_path: Option<&PathBuf>, cfg: &crate::config::AsrConfig) -> String {
     let base = cli_path
         .cloned()
@@ -49,6 +54,41 @@ fn scan_for_model(dir: &Path) -> Option<PathBuf> {
     }
     candidates.sort();
     Some(candidates[0].clone())
+}
+
+pub fn download_model(engine: &str, dir: &Path) -> anyhow::Result<()> {
+    match engine {
+        "vosk" => download_vosk(dir),
+        "whisper" => download_whisper(dir),
+        "auto" => {
+            if crate::asr::vosk_dl::is_available() {
+                download_vosk(dir)
+            } else {
+                download_whisper(dir)
+            }
+        }
+        _ => anyhow::bail!("Unknown engine '{engine}'. Use 'vosk' or 'whisper'."),
+    }
+}
+
+fn download_vosk(dir: &Path) -> anyhow::Result<()> {
+    let zip_path = dir.join("vosk-model.zip");
+    println!("Downloading Vosk model (Russian, ~42 MB)...");
+    duct::cmd!("curl", "-sL", "-o", &zip_path, VOSK_MODEL_URL).run()?;
+    println!("Extracting...");
+    duct::cmd!("unzip", "-qo", &zip_path, "-d", dir).run()?;
+    std::fs::remove_file(&zip_path)?;
+    println!("✓ Vosk model downloaded to {}", dir.join(VOSK_MODEL_DIR).display());
+    println!("  Set engine=\"vosk\" and model_path=\"{}\" in audiosub.toml", VOSK_MODEL_DIR);
+    Ok(())
+}
+
+fn download_whisper(dir: &Path) -> anyhow::Result<()> {
+    let path = dir.join(WHISPER_TINY_NAME);
+    println!("Downloading Whisper tiny model (~75 MB)...");
+    duct::cmd!("curl", "-sL", "-o", &path, WHISPER_TINY_URL).run()?;
+    println!("✓ Whisper model downloaded to {}", path.display());
+    Ok(())
 }
 
 fn default_model_path(engine: &str) -> PathBuf {

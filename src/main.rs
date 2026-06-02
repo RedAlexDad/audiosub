@@ -29,6 +29,12 @@ fn main() -> Result<()> {
     tracing::info!("audiosub v{} starting", env!("CARGO_PKG_VERSION"));
     tracing::debug!("Config: {:?}", cfg);
 
+    if let Some(ref engine) = args.download_model {
+        let dir = std::env::current_dir()?;
+        audiosub::session::model::download_model(engine, &dir)?;
+        return Ok(());
+    }
+
     if args.list_devices {
         let sources = audiosub::audio::list_sources()?;
         println!("Available PulseAudio monitor sources:");

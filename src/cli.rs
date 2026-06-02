@@ -41,6 +41,14 @@ pub struct Cli {
     )]
     pub engine: Option<String>,
 
+    #[arg(
+        long,
+        help = "Download ASR model: vosk | whisper (default: auto)",
+        num_args = 0..=1,
+        default_missing_value = "auto",
+    )]
+    pub download_model: Option<String>,
+
     #[arg(long, short = 'v', action = clap::ArgAction::Count, help = "Verbosity level")]
     pub verbose: u8,
 }
