@@ -194,12 +194,14 @@ fn asr_thread(
 
 // ── TUI loop (main thread) ──
 
+#[allow(clippy::too_many_arguments)]
 fn tui_loop(
     tui_rx: mpsc::Receiver<UiUpdate>,
     stop: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
     reset: Arc<AtomicBool>,
     engine_name: &str,
+    model_name: &str,
     engine_rate: u32,
     max_duration_ms: u64,
 ) -> Result<()> {
@@ -210,7 +212,7 @@ fn tui_loop(
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    let mut app = TuiApp::new(engine_name, engine_rate, max_duration_ms);
+    let mut app = TuiApp::new(engine_name, model_name, engine_rate, max_duration_ms);
 
     while app.running {
         terminal.draw(|f| view::render(&mut app, f))?;
@@ -266,6 +268,7 @@ pub fn run_tui(
     chunk_size: usize,
     max_duration_ms: u64,
     engine_name: &str,
+    model_name: &str,
 ) -> Result<()> {
     let target_rate = 16000;
     let read_chunk = (chunk_size / 4).max(64);
@@ -317,7 +320,7 @@ pub fn run_tui(
     });
 
     // ── TUI loop on main thread ──
-    let result = tui_loop(tui_rx, stop, paused, reset, engine_name, target_rate, max_duration_ms);
+    let result = tui_loop(tui_rx, stop, paused, reset, engine_name, model_name, target_rate, max_duration_ms);
 
     // Stop workers and wait
     let _ = cap_handle.join();

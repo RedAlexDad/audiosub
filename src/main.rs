@@ -100,6 +100,10 @@ fn main() -> Result<()> {
         let buffer = SubtitleBuffer::new(cfg.subtitle.buffer_ms, max_duration);
 
         let chunk_size = (cfg.audio.sample_rate as usize) / 10;
+        let model_name = std::path::Path::new(&model_path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown");
         audiosub::tui::worker::run_tui(
             capture,
             engine,
@@ -109,6 +113,7 @@ fn main() -> Result<()> {
             chunk_size,
             max_duration,
             &effective,
+            model_name,
         )
     }
 

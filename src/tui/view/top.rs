@@ -24,10 +24,17 @@ pub fn render_top(app: &TuiApp, frame: &mut Frame, area: Rect) {
         other => Span::styled(format!(" {other} "), Style::new().fg(Color::Blue)),
     };
 
+    let model_label = Span::styled(
+        format!(" {} ", app.model_name),
+        Style::new().fg(Color::Green),
+    );
+
     let title = Line::from(vec![
         Span::styled(" audiosub ", Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         Span::raw(" │ "),
         engine_label,
+        Span::raw(" "),
+        model_label,
         Span::raw(" │ "),
         status,
         Span::raw(" │ "),

@@ -96,7 +96,7 @@ fn scan_for_model(dir: &Path) -> Option<PathBuf> {
             let is_model_file = path.is_file()
                 && matches!(path.extension().and_then(|e| e.to_str()), Some("gguf" | "bin" | "ggml"));
             let is_vosk_dir = path.is_dir()
-                && path.file_name().and_then(|n| n.to_str()).map_or(false, |n| n.contains("vosk"));
+                && path.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.contains("vosk"));
             if is_model_file || is_vosk_dir {
                 candidates.push(path);
             }

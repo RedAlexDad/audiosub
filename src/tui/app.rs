@@ -6,6 +6,7 @@ use crate::tui::screen::Screen;
 
 pub struct TuiApp {
     pub engine_name: String,
+    pub model_name: String,
     pub partial: String,
     pub segments: Vec<Segment>,
     pub segment_count: usize,
@@ -29,9 +30,10 @@ pub struct TuiApp {
 }
 
 impl TuiApp {
-    pub fn new(engine_name: &str, engine_rate: u32, max_duration_ms: u64) -> Self {
+    pub fn new(engine_name: &str, model_name: &str, engine_rate: u32, max_duration_ms: u64) -> Self {
         Self {
             engine_name: engine_name.to_string(),
+            model_name: model_name.to_string(),
             partial: String::new(),
             segments: Vec::new(),
             segment_count: 0,
@@ -112,7 +114,7 @@ mod tests {
     #[test]
     fn tui_app_set_partial() {
         println!("Описание: set_partial() обновляет partial и добавляет запись в partial_history");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         app.set_partial("hello world");
         assert_eq!(app.partial, "hello world");
         assert_eq!(app.partial_history.len(), 1);
@@ -121,7 +123,7 @@ mod tests {
     #[test]
     fn tui_app_set_partial_skips_duplicates() {
         println!("Описание: повторный set_partial() с тем же текстом не дублирует историю");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         app.set_partial("hello");
         app.set_partial("hello");
         assert_eq!(app.partial_history.len(), 1);
@@ -130,7 +132,7 @@ mod tests {
     #[test]
     fn tui_app_set_partial_respects_paused() {
         println!("Описание: при paused=true partial не обновляется");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         app.paused = true;
         app.set_partial("hello");
         assert!(app.partial.is_empty());
@@ -139,7 +141,7 @@ mod tests {
     #[test]
     fn tui_app_add_segments() {
         println!("Описание: add_segments() добавляет сегменты и увеличивает счётчик");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         let segs = vec![
             Segment {
                 start_ms: 0,
@@ -160,7 +162,7 @@ mod tests {
     #[test]
     fn tui_app_add_segments_respects_paused() {
         println!("Описание: при paused=true сегменты не добавляются");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         app.paused = true;
         app.add_segments(vec![Segment {
             start_ms: 0,
@@ -173,7 +175,7 @@ mod tests {
     #[test]
     fn tui_app_do_reset() {
         println!("Описание: do_reset() очищает сегменты, историю, partial, счётчики и audio_level");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         app.set_partial("hello");
         app.add_segments(vec![Segment {
             start_ms: 0,
@@ -195,7 +197,7 @@ mod tests {
     #[test]
     fn tui_app_auto_scroll_triggers_on_add() {
         println!("Описание: при auto_scroll=true добавление сегмента сбрасывает scroll_offset в 0");
-        let mut app = TuiApp::new("test", 16000, 10000);
+        let mut app = TuiApp::new("test", "", 16000, 10000);
         app.scroll_offset = 5;
         app.auto_scroll = true;
         app.add_segments(vec![Segment {
