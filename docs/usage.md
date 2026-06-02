@@ -101,4 +101,25 @@ audiosub --list-devices
 audiosub --device alsa_output.pci-0000_00_1f.3.analog-stereo.monitor
 ```
 
+### Особенности по платформам
+
+| ОС | Бэкенд | Захват системного аудио |
+|----|--------|------------------------|
+| **Linux** | PulseAudio | ✅ **автоматически** (монитор дефолтного вывода) |
+| **Windows** | WASAPI (через CPAL) | ❌ только микрофон. Для системного звука — [VB-Cable](https://vb-audio.com/Cable/) |
+| **macOS** | CoreAudio (через CPAL) | ❌ только микрофон. Для системного звука — [BlackHole](https://github.com/ExistentialAudio/BlackHole) |
+
+На Windows с VB-Cable:
+```bash
+# Настроить вывод системы на "CABLE Input"
+# Запустить audiosub с устройством "CABLE Output"
+audiosub --device "CABLE Output"
+```
+
+На macOS с BlackHole:
+```bash
+# Создать Multi-Output Device в Audio MIDI Setup
+audiosub --device BlackHole
+```
+
 Подробнее про модели — в [models.md](models.md).

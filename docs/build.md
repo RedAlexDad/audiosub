@@ -1,29 +1,74 @@
 # Сборка из исходников
 
-## Зависимости
+## Linux
+
+### Зависимости
 
 ```bash
-# Rust (см. rust-toolchain.toml для версии)
+# Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Системные пакеты
 sudo apt install libpulse-dev cmake clang
 ```
 
-## Сборка
+### Сборка
 
 ```bash
-# Клонировать
 git clone https://github.com/RedAlexDad/audiosub.git
 cd audiosub
-
-# Собрать (release, whisper + vosk runtime)
-make release
-# Бинарник: release/audiosub
-
-# Или напрямую через cargo
 cargo build --release
+# Бинарник: target/release/audiosub
 ```
+
+## Windows
+
+### Через MSVC (рекомендуется)
+
+```powershell
+# Установить Rust: https://rustup.rs
+# Установить Visual Studio Build Tools с C++ workload
+
+git clone https://github.com/RedAlexDad/audiosub.git
+cd audiosub
+cargo build --release
+# Бинарник: target\release\audiosub.exe
+```
+
+### Через mingw (кросс-компиляция с Linux)
+
+```bash
+sudo apt install mingw-w64
+rustup target add x86_64-pc-windows-gnu
+cargo build --release --target x86_64-pc-windows-gnu
+# Бинарник: target/x86_64-pc-windows-gnu/release/audiosub.exe
+```
+
+## macOS
+
+```bash
+# Установить Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+git clone https://github.com/RedAlexDad/audiosub.git
+cd audiosub
+cargo build --release
+# Бинарник: target/release/audiosub
+```
+
+## Кросс-платформенное аудио
+
+audiosub использует разные бэкенды в зависимости от ОС:
+
+| ОС | Бэкенд | Захват системного аудио |
+|----|--------|------------------------|
+| Linux | PulseAudio | ✅ встроенный монитор |
+| Windows | CPAL/WASAPI | ❌ требуется VB-Cable |
+| macOS | CPAL/CoreAudio | ❌ требуется BlackHole |
+
+На Linux системный звук (YouTube, плеер) захватывается автоматически через PulseAudio monitor.
+
+На Windows и macOS — только микрофон. Для захвата системного аудио установите виртуальный аудиокабель (см. [installation.md](installation.md)).
 
 ## Флаги сборки
 
