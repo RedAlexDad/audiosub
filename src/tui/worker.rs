@@ -286,7 +286,7 @@ pub fn run_tui(
     #[cfg(target_os = "linux")]
     capture.set_stop(stop.clone());
     let stop_cap = stop.clone();
-    let cap_handle = thread::spawn(move || {
+    let _cap_handle = thread::spawn(move || {
         if let Err(e) = capture_thread(&mut capture, capture_tx, stop_cap, read_chunk) {
             tracing::error!("Capture thread: {}", e);
         }
@@ -324,7 +324,7 @@ pub fn run_tui(
     // ── TUI loop on main thread ──
     let result = tui_loop(
         tui_rx,
-        stop,
+        stop.clone(),
         paused,
         reset,
         engine_name,
@@ -333,9 +333,12 @@ pub fn run_tui(
         max_duration_ms,
     );
 
-    // Stop workers and wait
-    let _ = cap_handle.join();
+    // Stop ASR thread (waits for it to finalize pending work)
     let _ = asr_handle.join();
+
+    // Capture thread may block on PA read — detach instead of joining
+    // It will be cleaned up when the process exits
+    stop.store(true, Ordering::Relaxed);
 
     result
 }
