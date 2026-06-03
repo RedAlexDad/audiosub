@@ -1,3 +1,8 @@
+#![allow(unsafe_code)]
+
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use anyhow::{Context, Result};
 use libpulse_binding::sample::{Format, Spec};
 use libpulse_binding::stream::Direction;
@@ -5,12 +10,17 @@ use libpulse_simple_binding::Simple;
 
 use super::{AudioCapture, AudioChunk, AudioResampler};
 
+unsafe extern "C" {
+    fn pa_simple_get_readable_size(s: *mut std::ffi::c_void) -> usize;
+}
+
 pub struct PulseCapture {
     device: String,
     source_rate: u32,
     target_rate: u32,
     resampler: Option<AudioResampler>,
     pa: Option<Simple>,
+    stop: Option<Arc<AtomicBool>>,
 }
 
 impl PulseCapture {
@@ -21,14 +31,30 @@ impl PulseCapture {
             target_rate: 16000,
             resampler: None,
             pa: None,
+            stop: None,
         }
     }
 
+    pub fn set_stop(&mut self, stop: Arc<AtomicBool>) {
+        self.stop = Some(stop);
+    }
+
     /// Read raw PCM f32 samples from PulseAudio WITHOUT resampling.
-    /// `n` is the number of f32 samples to request.
+    /// Non-blocking: checks readable size first, returns None if no data.
     pub fn read_raw(&mut self, n: usize) -> Result<Option<Vec<f32>>> {
+        if self.stop.as_ref().is_some_and(|s| s.load(Ordering::Relaxed)) {
+            return Ok(None);
+        }
         let pa = self.pa.as_ref().context("PulseAudio not started")?;
         let byte_len = n * 4;
+
+        // Check if data is available (non-blocking)
+        let pa_ptr = pa as *const Simple as *mut std::ffi::c_void;
+        let available = unsafe { pa_simple_get_readable_size(pa_ptr) };
+        if available < byte_len {
+            return Ok(None);
+        }
+
         let mut buf = vec![0u8; byte_len];
         if let Err(e) = pa.read(&mut buf) {
             tracing::warn!("PulseAudio read error: {}", e);

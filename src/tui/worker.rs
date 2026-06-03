@@ -283,6 +283,8 @@ pub fn run_tui(
     let (tui_tx, tui_rx) = mpsc::channel::<UiUpdate>();
 
     // ── Spawn capture thread ──
+    #[cfg(target_os = "linux")]
+    capture.set_stop(stop.clone());
     let stop_cap = stop.clone();
     let cap_handle = thread::spawn(move || {
         if let Err(e) = capture_thread(&mut capture, capture_tx, stop_cap, read_chunk) {
