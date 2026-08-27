@@ -33,7 +33,7 @@ cpal = "0.17"
 rubato = "3"
 
 # ASR
-whisper-rs = { version = "0.14", optional = true, features = ["default", "tracing_backend"] }
+whisper-rs = { version = "0.14", optional = true, features = ["default", "cuda", "tracing_backend"] }
 libloading = "0.8"
 
 # JSON (Vosk results)
