@@ -92,6 +92,31 @@ cargo build --no-default-features
 cargo build --features whisper,tui
 ```
 
+## GPU (CUDA)
+
+Whisper можно ускорить на NVIDIA GPU. У крейта своей фичи `cuda` нет —
+она включается на зависимости `whisper-rs` в `Cargo.toml`:
+
+```toml
+[dependencies.whisper-rs]
+version = "0.14"
+features = ["default", "cuda", "tracing_backend"]
+```
+
+Сборка с CUDA-тулчейном:
+
+```bash
+CUDACXX=/usr/local/cuda-13.2/bin/nvcc CUDA_PATH=/usr/local/cuda-13.2 cargo build
+```
+
+Ограничения:
+
+- **Драйвер — потолок 13.2**: CUDA 13.3 требует драйвер ≥610.43.
+  На драйвере 595.84 максимум — CUDA 13.2 Update 1 (deb-пакеты).
+- **CPU fallback**: если в рантайме нет GPU/драйвера/CUDA-либ, whisper
+  сам падает на CPU (ggml не регистрирует CUDA-устройств) — код менять
+  не нужно, бинарник одинаковый.
+
 ## Сборка в Docker
 
 ```bash

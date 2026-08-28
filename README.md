@@ -17,6 +17,7 @@ chmod +x audiosub
 ## Возможности
 
 - **Два движка ASR**: Whisper (встроен, портативный) и Vosk (runtime через libvosk.so)
+- **GPU-ускорение Whisper**: фича `cuda` — распознавание на CUDA; без GPU автоматически падает на CPU
 - **Кросс-платформенность**: Linux (PulseAudio), Windows (WASAPI), macOS (CoreAudio)
 - **Без конфига**: автодетект модели, аудиоустройства и движка
 - **TUI**: интерактивный терминальный интерфейс
@@ -44,6 +45,7 @@ audiosub --no-tui --duration 30 # CLI, 30 секунд
 audiosub --list-devices         # Список аудиоисточников
 audiosub --download-model       # Скачать модель (авто)
 audiosub --download-model whisper:base  # Конкретная модель
+audiosub --download-model whisper:large  # large-v3 (~3 GB), см. docs/models.md
 audiosub --help                 # Полная справка
 ```
 

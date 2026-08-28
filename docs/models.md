@@ -30,11 +30,14 @@ audiosub --download-model whisper:tiny     # ~75 MB
 audiosub --download-model whisper:base     # ~150 MB
 audiosub --download-model whisper:small    # ~500 MB
 audiosub --download-model whisper:medium   # ~1.5 GB
-audiosub --download-model whisper:large    # ~3 GB
+audiosub --download-model whisper:large    # ~3 GB (large-v3)
 audiosub --download-model whisper:turbo    # ~1.5 GB (быстрый)
 ```
 
 Модели скачиваются в **текущую директорию**.
+
+> **Примечание:** `whisper:large` теперь качает `ggml-large-v3.bin` —
+> оригинальный `ggml-large.bin` (v1) удалён с HuggingFace.
 
 ## Ручная установка
 
@@ -43,20 +46,21 @@ audiosub --download-model whisper:turbo    # ~1.5 GB (быстрый)
 Скачать с [HuggingFace](https://huggingface.co/ggerganov/whisper.cpp/tree/main):
 
 ```bash
-curl -sL -o ggml-base.bin \
+# Внимание: в некоторых сетях hf.co виснет на HTTP/2 — используйте -4 --http1.1
+curl -4 --http1.1 -sL -o ggml-base.bin \
   https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
 ```
 
 Таблица моделей Whisper:
 
-| Модель | Размер | Качество | Скорость |
-|--------|--------|----------|----------|
-| tiny | ~75 MB | низкое | быстрая |
-| base | ~150 MB | низкое | быстрая |
-| small | ~500 MB | среднее | средняя |
-| medium | ~1.5 GB | высокое | медленная |
-| large | ~3 GB | высочайшее | медленная |
-| turbo | ~1.5 GB | высокое (large-v3) | быстрая |
+| Модель | Файл | Размер | Качество | Скорость |
+|--------|------|--------|----------|----------|
+| tiny | ggml-tiny.bin | ~75 MB | низкое | быстрая |
+| base | ggml-base.bin | ~150 MB | низкое | быстрая |
+| small | ggml-small.bin | ~500 MB | среднее | средняя |
+| medium | ggml-medium.bin | ~1.5 GB | высокое | медленная |
+| large | ggml-large-v3.bin | ~3 GB | высочайшее | медленная |
+| turbo | ggml-large-v3-turbo.bin | ~1.5 GB | высокое (large-v3) | быстрая |
 
 ### Vosk
 

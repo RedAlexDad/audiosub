@@ -20,6 +20,19 @@ make build-both      # cargo build --features "vosk,whisper,tui"
 - **rustfmt:** max_width=120, tab_spaces=4, edition=2024
 - **Lints:** `unsafe_code = "deny"`
 
+## GPU (CUDA)
+
+- **Включение:** фича `cuda` стоит на зависимости `whisper-rs` в Cargo.toml
+  (у самого крейта своей фичи нет), сборка — обычный `cargo build`.
+- **Toolkit:** CUDA 13.2 Update 1 (deb-пакеты; cublas 13.2.2.2 прилинкован в
+  `/usr/local/cuda-13.2/targets/x86_64-linux/`). Драйвер 595.84 = потолок
+  13.2: CUDA 13.3 требует драйвер ≥610.43.
+- **Сборка:** `CUDACXX=/usr/local/cuda-13.2/bin/nvcc CUDA_PATH=/usr/local/cuda-13.2 cargo build`
+- **CPU fallback:** без GPU/драйвера/CUDA-либ в рантайме whisper сам падает
+  на CPU (ggml не регистрирует 0 CUDA-устройств) — код менять не нужно.
+- **Скачивания:** после рефакторинга HF/`curl` зависают на HTTP/2 — везде
+  используется `curl -4 --http1.1` (вшито в `download_model`).
+
 ## Testing
 
 - **74 total**: 48 inline (`#[cfg(test)] mod tests`), 26 integration (`tests/*.rs`)
@@ -39,7 +52,8 @@ Capture thread → mpsc[AudioData] → ASR thread → mpsc[UiUpdate] → TUI thr
 - `src/main.rs` — entrypoint, chooses CLI (`run_session()`) or TUI (`tui::worker::run_tui()`)
 - `src/tui/worker.rs` — 3-thread orchestration (capture/ASR/TUI)
 - `src/tui/capture.rs` — legacy single-threaded path
-- Models go in `models/` (gitignored): `vosk-model-small-ru-0.22` or `ggml-base.bin`
+- Models: предзагруженные в `models/` (gitignored): `vosk-model-small-ru-0.22`, `ggml-{tiny,base,small,medium}.bin`
+- Скачивание: `audiosub --download-model whisper:large` → `ggml-large-v3.bin` в текущей директории (`ggml-large.bin` удалён с HF, v1 — отдельный файл)
 - Runtime config: `audiosub.toml` at project root (also searchable via CLI arg, CWD, `~/.cache/audiosub/`)
 - CLI mode: `make cli` or `cargo run -- --no-tui`
 - Output: `subtitles.srt` (configurable), exported copies in `saved/`
